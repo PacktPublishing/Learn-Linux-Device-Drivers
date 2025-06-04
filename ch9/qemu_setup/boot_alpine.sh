@@ -18,14 +18,21 @@ setup the VM, and then run this script"
 DISK=alpine.img
 qemu-system-x86_64 \
   -m 512M \
-  -enable-kvm \
   -smp 2 \
   -cpu host \
+  -enable-kvm \
   -nographic \
   -net nic -net user \
   -drive file="$DISK",format=qcow2 \
   -device pci-testdev \
   -device virtio-serial-pci,id=vs0
+
+#--- Reg the -enable-kvm option:
+# Keeping the -enable-kvm is (really) good for performance; however,
+# it seems to only support one instance of a KVM-enabled guest on a given
+# system. Hence, it fails to boot if you have another hypervisor - like Oracle
+# VirtualBox that's also using kvm - running simultaneously.
+#---
   
 #---
 # Once in the guest:
