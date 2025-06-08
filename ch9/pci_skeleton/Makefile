@@ -35,7 +35,7 @@
 # This enables you to use this Makefile as a template; just update this variable!
 # As well, the KEEP_DEBUG_INFO variable (see it below) can be set to 'y' or 'n' (no being
 # the default)
-FNAME_C ?= pci_skel
+FNAME_C ?= pci_skeleton
 ifeq ($(FNAME_C),)
   $(error ERROR: you Must pass the C file like this: \
   make FNAME_C=csrc-filename-without-.c target-name)
