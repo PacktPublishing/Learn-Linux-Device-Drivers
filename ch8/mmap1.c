@@ -74,6 +74,5 @@ int main(int argc, char **argv)
 
     munmap(base, MAP_SIZE);
     close(fd);
-    return 0;
+    exit(0);
 }
-

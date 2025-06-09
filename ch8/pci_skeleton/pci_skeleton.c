@@ -37,11 +37,12 @@ MODULE_VERSION("0.2");
 // Replace with your device's actual IDs
 #define MY_VENDOR_ID  0x1234
 #define MY_DEVICE_ID  0x5678
-#define NUM_MSIX_VECTORS 1	// request just one MSI-X vector for now
+#define MEMORY_BAR	   0
+#define NUM_MSIX_VECTORS   1	// request just one MSI-X vector for now
 
 struct pci_skeleton_dev {
-	void __iomem *bar0_addr;
-	resource_size_t bar0_len;
+	void __iomem *bar_addr;
+	resource_size_t bar_len;
 	struct pci_dev *pdev;
 	struct msix_entry msix_entries[NUM_MSIX_VECTORS];
 };
@@ -83,9 +84,9 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		return err;
 	}
 
-	err = pci_request_regions(pdev, KBUILD_MODNAME);
+	err = pci_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
 	if (err) {
-		pr_err("request PCI regions failed\n");
+		pr_err("request PCI region 0 (BAR0) failed\n");
 		goto disable_device;
 	}
 
@@ -100,9 +101,9 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	dev->pdev = pdev;
 	pci_set_drvdata(pdev, dev);
 
-	dev->bar0_len = pci_resource_len(pdev, 0);
-	dev->bar0_addr = pci_ioremap_bar(pdev, 0);
-	if (!dev->bar0_addr) {
+	dev->bar_len = pci_resource_len(pdev, MEMORY_BAR);
+	dev->bar_addr = pci_ioremap_bar(pdev, MEMORY_BAR);
+	if (!dev->bar_addr) {
 		pr_err("remap BAR0 failed\n");
 		err = -EIO;
 		goto free_dev;
@@ -129,7 +130,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
  disable_msix:
 	pci_disable_msix(pdev);
  unmap_bar:
-	iounmap(dev->bar0_addr);
+	iounmap(dev->bar_addr);
  free_dev:
 	kfree(dev);
  release_regions:
@@ -148,13 +149,11 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 		free_irq(dev->msix_entries[0].vector, dev);
 		pci_disable_msix(pdev);
 
-		if (dev->bar0_addr)
-			iounmap(dev->bar0_addr);
-
+		if (dev->bar_addr)
+			iounmap(dev->bar_addr);
 		kfree(dev);
 	}
-
-	pci_release_regions(pdev);
+	pci_release_region(pdev, MEMORY_BAR);
 	pci_disable_device(pdev);
 }
 
@@ -173,6 +172,7 @@ static struct pci_driver pci_skeleton_driver = {
 	.remove = pci_skeleton_remove,
 };
 
+/*----------- Older style, now replaced by module_pci_driver() ------*/
 static int __init pci_skeleton_init(void)
 {
 	pr_info("init\n");
@@ -187,3 +187,11 @@ static void __exit pci_skeleton_exit(void)
 
 module_init(pci_skeleton_init);
 module_exit(pci_skeleton_exit);
+/*--------------------------------------------------------------------*/
+/*
+ * Guess what: we can replace all these lines of code – the
+ * module_{init|exit}() and the pci_skeleton_{init|exit}()
+ * functions – with just one line of code:
+ *	module_pci_driver(pci_skeleton_driver);
+ *----------------------------------------------------------------------
+ */
