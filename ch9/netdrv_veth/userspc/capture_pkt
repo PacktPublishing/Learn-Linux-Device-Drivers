@@ -1,0 +1,11 @@
+#!/bin/bash
+COUNT=1
+PORT=54295
+APP=tx_packets_to_veth
+
+sudo tcpdump -i any -XX -e -p -n -s0 -tttt -# -v -c${COUNT} port ${PORT} &
+
+echo "tcpdump running in the background..
+Now we'll run the ${APP} process which will send packets to our 'veth' network interface..."
+./${APP}
+exit 0

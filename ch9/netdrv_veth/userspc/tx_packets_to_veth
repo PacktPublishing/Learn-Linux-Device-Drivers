@@ -1,0 +1,80 @@
+#!/bin/bash
+# tx_packets_to_veth
+# Part of the 'veth' NIC app/driver prj
+# Run this via the helper script
+#  run_and_capture_pkt
+name=$(basename $0)
+
+trap 'echo "${name}: terminating ..." ; pkill runapp' INT QUIT EXIT 
+
+die()
+{
+echo >&2 "FATAL: $*" ; exit 1
+}
+
+# $1 : n/w interface name
+getIP()
+{
+ [[ $# -ne 1 ]] && return
+ ifconfig $1|grep -w 'inet' |awk '{print $2}'
+}
+
+#--- 'main'
+INTF=veth
+
+which ifconfig >/dev/null 2>&1 || die "ifconfig not installed? Pl install & retry"
+[[ $# -ne 1 ]] && die "Usage: ${name} number-of-packets-to-tx"
+NUM2TX=$1
+
+# Look for the first ethernet intf to come up this boot (we'll want it's IP addr)
+# It's often 'renamed', look for that and extract the intf name
+s1=$(journalctl -b --no-pager |grep "renamed from "|head -n1)
+# Now get the string before the ':' char
+s2=$(echo ${s1%:*})
+# get the last word
+FIRST_INTF=$(echo ${s2}|awk '{printf $NF}')  # something like 'enp0s3'
+
+# If that doesn't work, simply look for the first intf ethN, no rename stuff
+if [[ -z "${FIRST_INTF}" ]] ; then
+  s1=$(journalctl -b --no-pager |grep "eth[0-9]"|head -n1)
+  # Now get the string before the ':' char
+  s2=$(echo ${s1%:*})
+  # get the last word
+  FIRST_INTF=$(echo ${s2}|awk '{printf $NF}')
+fi
+ip link |grep "${FIRST_INTF}.*UP" >/dev/null
+[[ $? -ne 0 ]] && die "${name}: warning: issue with interface ${FIRST_INTF}? shows as not being UP"
+IP_FIRST_INTF=$(getIP ${FIRST_INTF})
+#echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"
+IP_FIRST_INTF_SUBNET=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d.%d.%d", $1, $2, $3)}')
+IP_VETH="${IP_FIRST_INTF_SUBNET}.210"  # 210: randomly chosen
+
+IP_FIRST_INTF_NODE=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d", $4)}')
+DEST_IP_VETH_NODE=$((IP_FIRST_INTF_NODE+1))
+DEST_IP_VETH="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VETH_NODE}"
+#IP=10.0.2.101
+#DEST_IP=10.0.2.16
+
+ip a |grep ${INTF} || die "Interface \"${INTF}\" not visible?"
+sudo ifconfig ${INTF} ${IP_VETH} up || die "bringing intf \"${INTF}\" up failed"
+ifconfig ${INTF}
+
+#LISTNR=listener_dgram
+#[[ ! -f ${LISTNR} ]] && make
+#pkill ${LISTNR}
+#echo "${name}: running listener process..."
+#[ -x ./${LISTNR} ] && ./${LISTNR} &
+
+# Running a ping in the bg seems to trigger the n/w interface issue
+# and then the driver gets the packets being transmitted
+# [?]
+#ping ${PING_IP} &
+
+TALKER=talker_dgram
+[[ ! -f ${TALKER} ]] && make
+sudo pkill ${TALKER}
+echo "${name}: running talker process..."
+MSG="hey, ${INTF}, wassup"
+[ -x ${TALKER} ] && {
+  sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}" ${NUM2TX}
+}

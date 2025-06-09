@@ -1,0 +1,20 @@
+#!/bin/bash
+COUNT=1
+PORT=54295
+APP=tx_packets_to_veth
+
+hash tcpdump 2>/dev/null || {
+  echo "Install tcpdump first"
+  exit 1
+}
+sudo pkill tcpdump
+echo "--- sudo tcpdump -i any -XX -e -p -n -s0 -tttt -# -v -c${COUNT} port ${PORT} &"
+sudo tcpdump -i any -XX -e -p -n -s0 -tttt -# -v -c${COUNT} port ${PORT} &
+
+NUM2TX=1
+echo "
+tcpdump running in the background..
+We'll now run the ${APP} process which will send ${NUM2TX} packet(s) to our 'veth' network interface...
+"
+./${APP} ${NUM2TX}
+exit 0
