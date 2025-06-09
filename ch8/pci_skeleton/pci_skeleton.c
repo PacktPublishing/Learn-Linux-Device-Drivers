@@ -49,7 +49,11 @@ struct pci_skeleton_dev {
 // Interrupt handler
 static irqreturn_t pci_skeleton_irq_handler(int irq, void *dev_id)
 {
-	struct pci_skeleton_dev *dev = dev_id;
+	const struct pci_skeleton_dev *dev = dev_id;
+	/* We know that this line (above) results in a compiler warning:
+	 * 'warning: unused variable ‘dev’ ...'
+	 * We still keep the line for illustrative purposes..
+	 */
 
 	pr_info("IRQ %d triggered\n", irq);
 
@@ -61,7 +65,7 @@ static irqreturn_t pci_skeleton_irq_handler(int irq, void *dev_id)
 /*
  * The probe method! This being invoked - by the PCI bus driver - implies a new
  * PCI device has been inserted/discovered.
- * 
+ *
  * @pdev: ptr to the PCI[e] device structure
  * @ent : ptr to the pci_device_id structure, in effect, the entry in the PCI
  *        device ID table that matched!
