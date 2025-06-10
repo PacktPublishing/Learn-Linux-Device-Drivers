@@ -2,7 +2,13 @@
 COUNT=1
 PORT=54295
 APP=tx_packets_to_veth
+DRV=veth_netdrv
 
+lsmod |grep -w ${DRV} >/dev/null || {
+  echo "Fatal: load the network driver \"${DRV}\" first"
+  exit 1
+}
+  
 hash tcpdump 2>/dev/null || {
   echo "Install tcpdump first"
   exit 1
