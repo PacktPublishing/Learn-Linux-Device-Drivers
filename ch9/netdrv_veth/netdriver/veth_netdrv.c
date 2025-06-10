@@ -82,14 +82,13 @@ Len:       2       14                    20                   8           x
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 #include "../veth_common.h"
 
-struct stVnetIntfCtx {
+struct veth_pvt_data {
 	struct net_device *netdev;
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
 	unsigned int data_xform;
 	spinlock_t lock;
 };
-static struct stVnetIntfCtx *gpstCtx;
 
 /*
  * The Tx entry point.
@@ -100,19 +99,13 @@ static struct stVnetIntfCtx *gpstCtx;
  * - 'ping -c1 10.10.1.x , with 'x' != IP addr (5, in our current setup;
  *   also but realize that ping won't actually work on a local interface).
  * Use a network analyzer (eg Wireshark) to see packets flowing across the interface..
-*/
-static int tx_pkt_count;	//, rx_pkt_count;
-static int vnet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
+ */
+static int tx_pkt_count;
+static int vnet_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 {
-	struct iphdr *ip;
-	struct udphdr *udph;
-	struct stVnetIntfCtx *pstCtx = netdev_priv(ndev);
-
-//#define SHOW_TIME_SPINLOCK_HELD
-#undef SHOW_TIME_SPINLOCK_HELD
-#ifdef SHOW_TIME_SPINLOCK_HELD
-	u64 ts1, ts2;
-#endif
+	const struct iphdr *ip;
+	const struct udphdr *udph;
+	struct veth_pvt_data *vp = netdev_priv(netdev);
 
 	if (!skb) {		// paranoia!
 		pr_alert("skb NULL!\n");
@@ -129,7 +122,7 @@ Len:      2       14                    20                   8           x
          ^  ^                                                            ^      ^
          |  |                                                            |      |
 skb-> head data                                                        tail   end
-*/
+ */
 
 	/*---------Packet Filtering :) --------------*/
 	/* If the outgoing packet is not of the UDP protocol, discard it */
@@ -160,22 +153,10 @@ skb-> head data                                                        tail   en
 #endif
 
 	/* Update stat counters; ugly with the silly time delta calculation... */
-	spin_lock(&pstCtx->lock);
-#ifdef SHOW_TIME_SPINLOCK_HELD
-	ts1 = ktime_get_real_ns();
-#endif
-
-	pstCtx->txpktnum = ++tx_pkt_count;
-	pstCtx->tx_bytes += skb->len;
-
-#ifdef SHOW_TIME_SPINLOCK_HELD
-	ts2 = ktime_get_real_ns();
-#endif
-	spin_unlock(&pstCtx->lock);
-
-#ifdef SHOW_TIME_SPINLOCK_HELD
-	SHOW_DELTA(ts2, ts1);
-#endif
+	spin_lock(&vp->lock);
+	vp->txpktnum = ++tx_pkt_count;
+	vp->tx_bytes += skb->len;
+	spin_unlock(&vp->lock);
 
 #if 0
 	pr_debug("Emulating Rx by artificially invoking vnet_rx() now...\n");
@@ -200,6 +181,7 @@ static int vnet_stop(struct net_device *ndev)
 	QP;
 	netif_stop_queue(ndev);
 	netif_carrier_off(ndev);
+
 	return 0;
 }
 
@@ -207,14 +189,14 @@ static int vnet_stop(struct net_device *ndev)
 static struct net_device_stats ndstats;
 static struct net_device_stats *vnet_get_stats(struct net_device *ndev)
 {
-	struct stVnetIntfCtx *pstCtx = netdev_priv(ndev);
+	struct veth_pvt_data *vp = netdev_priv(ndev);
 
-	spin_lock(&pstCtx->lock);
-	ndstats.rx_packets = pstCtx->rxpktnum;
-	ndstats.rx_bytes = pstCtx->rx_bytes;
-	ndstats.tx_packets = pstCtx->txpktnum;
-	ndstats.tx_bytes = pstCtx->tx_bytes;
-	spin_unlock(&pstCtx->lock);
+	spin_lock(&vp->lock);
+	ndstats.rx_packets = vp->rxpktnum;
+	ndstats.rx_bytes = vp->rx_bytes;
+	ndstats.tx_packets = vp->txpktnum;
+	ndstats.tx_bytes = vp->tx_bytes;
+	spin_unlock(&vp->lock);
 
 	return &ndstats;
 }
@@ -228,76 +210,66 @@ static const struct net_device_ops vnet_netdev_ops = {
 	.ndo_open = vnet_open,
 	.ndo_stop = vnet_stop,
 	.ndo_get_stats = vnet_get_stats,
-//      .ndo_do_ioctl           = vnet_ioctl,
+//      .ndo_do_ioctl = vnet_ioctl,
 	.ndo_start_xmit = vnet_start_xmit,
 	.ndo_tx_timeout = vnet_tx_timeout,
 };
 
-/*
-FIXME: [  579.273860] Device 'vnet.0' does not have a release() function, it is broken and must be fixed.
-*/
 // ETH_ALEN is 6
-static const u8 veth_MAC_addr[ETH_ALEN] = { 0x48, 0x0F, 0x0E, 0x0D, 0x0A, 0x02 };
+static u8 veth_MAC_addr[ETH_ALEN] = { 0x48, 0x0F, 0x0E, 0x0D, 0x0A, 0x02 };
 
 static int vnet_probe(struct platform_device *pdev)
 {
-	struct net_device *ndev = NULL;
+	struct net_device *netdev = NULL;
+	struct veth_pvt_data *vp;
 	int res = 0;
 
 	QP;
-	ndev = alloc_etherdev(sizeof(struct stVnetIntfCtx));
-	if (!ndev) {
-		pr_alert("alloc_etherdev failed!\n");
+	netdev = devm_alloc_etherdev(&pdev->dev, sizeof (*vp));
+	if (!netdev)
 		return -ENOMEM;
-	}
-#if 0
-	SET_NETDEV_DEV(ndev, &pdev->dev);
-	/* we can't do this here, as the 'pdev->dev'
-	   is a pointer to the 'device' structure, not the net_device ...
-	   So, to make this work, (being able to lookup the net_device struct at will),
-	   we *need* one global pointer to our "driver context"; this is 'gpstCtx' & is
-	   initialized below.. */
-#endif
 
-	ether_setup(ndev);
-	strscpy(ndev->name, INTF_NAME, strlen(INTF_NAME) + 1);
-	dev_addr_set(ndev, veth_MAC_addr);
-//	memcpy(ndev->dev_addr, (const void *)veth_MAC_addr, ETH_ALEN);
-	//memcpy(ndev->dev_addr, (const void *)veth_MAC_addr, sizeof(veth_MAC_addr));
+	SET_NETDEV_DEV(netdev, &pdev->dev);
+	vp = netdev_priv(netdev);
+	ether_setup(netdev);
+	strscpy(netdev->name, INTF_NAME, strlen(INTF_NAME) + 1);
+	dev_addr_set(netdev, veth_MAC_addr);
 
 #if 0
 	MAC addr..ndo methods:open xmit stop get_stats do_ioctl ? iomem addr irq
 #endif
-	if (!is_valid_ether_addr(ndev->dev_addr)) {
-		pr_warn("%s: Invalid ethernet MAC address. Please set using ifconfig\n",
-			 ndev->name);
+	if (!is_valid_ether_addr(netdev->dev_addr)) {
+		pr_debug("%s: Invalid ethernet MAC address. Please set using ifconfig\n",
+			 netdev->name);
 	}
 
 	/* keep the default flags, just add NOARP */
-	ndev->flags |= IFF_NOARP;
+	netdev->flags |= IFF_NOARP;
 
-	ndev->watchdog_timeo = 8 * HZ;
-	spin_lock_init(&gpstCtx->lock);
-
+	netdev->watchdog_timeo = 8 * HZ;
+	spin_lock_init(&vp->lock);
 	/* Initializing the netdev ops struct is essential; else, we Oops.. */
-	ndev->netdev_ops = &vnet_netdev_ops;
+	netdev->netdev_ops = &vnet_netdev_ops;
+	platform_set_drvdata(pdev, vp);
 
-	res = register_netdev(ndev);
+	res = register_netdev(netdev);
 	if (res) {
 		pr_alert("failed to register net device!\n");
-		goto out_regnetdev_fail;
+		return res;
 	}
-	gpstCtx->netdev = ndev;
-	return 0;
+	vp->netdev = netdev;
 
- out_regnetdev_fail:
-	free_netdev(ndev);
-	return res;
+	return 0;
 }
 
 static void vnet_remove(struct platform_device *pdev)
 {
-	struct net_device *ndev = gpstCtx->netdev;
+	struct veth_pvt_data *vp = platform_get_drvdata(pdev);
+	struct net_device *netdev = vp->netdev;
+
+	QP;
+	unregister_netdev(netdev);
+}
 
 /*
  * FIXME: [  579.273860] Device 'veth_netdrv.0' does not have a release() function,
@@ -329,7 +301,6 @@ void release_myplatdev(struct device *dev)
  * Done here mainly so that we have a 'probe' method that will get invoked on it's registration.
  */
 static struct platform_device veth0 = {
-	.name = DRVNAME,
 	.name = KBUILD_MODNAME,
 	.id = 0,
 	.dev = {
@@ -345,20 +316,37 @@ static struct platform_driver virtnet = {
 	.probe = vnet_probe,
 	.remove = vnet_remove,
 	.driver = {
-		   .name = DRVNAME,
-		   .owner = THIS_MODULE,
-		   },
+		.name = KBUILD_MODNAME,
+		.owner = THIS_MODULE,
+	},
 };
 
 static int __init vnet_init(void)
 {
 	int res = 0;
 
-	pr_debug("Initializing network driver...\n");
-	gpstCtx = kzalloc(sizeof(struct stVnetIntfCtx), GFP_KERNEL);
-	if (!gpstCtx)
-		return -ENOMEM;
+	pr_info("Initializing our simple network driver\n");
 
+	/*
+	 * Here, we're simply 'manually' adding a platform device (old-style)
+	 * via the platform_add_devices() API, which is a wrapper over
+	 * platform_device_register().
+	 *
+	 * This approach's considered a 'legacy'
+	 * one and should not be generally used; in general, the modern model
+	 * is to have discovery/enumeration of the device performed *outside*
+	 * the driver. This is what's always done in the normal case - via the
+	 * client driver registering with the appropriate bus driver, and so on...
+	 * In the modern model, the driver specifies which devices it supports
+	 * - it can drive - via the Device Tree (DT) on platforms that support it
+	 * (or via ACPI)! In this (modern) approach,
+	 * the DT devices are auto-generated as platform devices by the kernel
+	 * at early boot.. 
+	 *
+	 * But here, in order to have a 'device' as required by the LDM,
+	 * we merely and 'manually' instantiate a 'dummy' device - the platform device!
+	 * We pretend it's our NIC and have fun 'driving' it.
+	 */
 	res = platform_add_devices(veth_platform_devices, ARRAY_SIZE(veth_platform_devices));
 	if (res) {
 		pr_alert("platform_add_devices failed!\n");
@@ -370,8 +358,9 @@ static int __init vnet_init(void)
 		pr_alert("platform_driver_register failed!\n");
 		goto out_fail_pdr;
 	}
-	// successful platform_driver_register() will cause the registered 'probe'
-	// method to be invoked now..
+	/* Successful platform_driver_register() will cause the registered 'probe'
+	 * method to be invoked now..
+	 */
 
 	pr_info("loaded.\n");
 	return res;
@@ -380,21 +369,13 @@ static int __init vnet_init(void)
 	platform_driver_unregister(&virtnet);
 	platform_device_unregister(&veth0);
  out_fail_pad:
-	kfree(gpstCtx);
 	return res;
 }
 
 static void __exit vnet_exit(void)
 {
-#if 0
-	struct net_device *ndev = gpstCtx->netdev;
-
-//      unregister_netdev (ndev);
-//      free_netdev (ndev);
-#endif
 	platform_driver_unregister(&virtnet);
 	platform_device_unregister(&veth0);
-	kfree(gpstCtx);
 	pr_info("unloaded.\n");
 }
 
@@ -402,6 +383,6 @@ module_init(vnet_init);
 module_exit(vnet_exit);
 
 MODULE_DESCRIPTION("Simple demo virtual ethernet (NIC) driver; allows a user \
-app to transmit a UDP packet via this network driver");
+app to 'transmit' (to local loopback only) a UDP packet via this network driver");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_LICENSE("Dual MIT/GPL");
