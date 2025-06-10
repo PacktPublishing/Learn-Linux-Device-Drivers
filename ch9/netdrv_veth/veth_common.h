@@ -28,11 +28,6 @@
 
 #include "convenient.h"
 
-#define DRVNAME		"vnet"
-//#define INTF_NAME	"veth"	// this is the interface emulated by the 'static'
-				// packet generation ver of this driver
-//#define PORTNUM		54295
-
 #define DUMP_PKTS	1
 #define	Print_hex_dump_bytes(prefix_str, prefix, dataptr, len)    do { \
 	if (DUMP_PKTS)  \
@@ -72,12 +67,5 @@
 	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, skb->head, skb->end); \
 } while (0)
 
-/*static struct {
-	struct net_device *netdev;
-	int txpktnum, rxpktnum;
-	int tx_bytes, rx_bytes;
-	unsigned int data_xform;
-	spinlock_t lock;
-} stVnetIntfCtx;*/
 #endif /* kernel */
 #endif
