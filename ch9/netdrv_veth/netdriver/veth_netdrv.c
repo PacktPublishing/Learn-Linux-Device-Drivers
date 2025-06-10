@@ -299,10 +299,26 @@ static void vnet_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = gpstCtx->netdev;
 
+/*
+ * FIXME: [  579.273860] Device 'veth_netdrv.0' does not have a release() function,
+ * it is broken and must be fixed. See Documentation/core-api/kobject.rst.
+...
+When a reference is released, the call to kobject_put() will decrement the
+201 reference count and, possibly, free the object. Note that kobject_init()
+202 sets the reference count to one, so the code which sets up the kobject will
+203 need to do a kobject_put() eventually to release that reference.
+...
+ * Specifying an explicit 'release' method as part of the platform device solves this.
+ * We don't actually have to do anything here, it's automatic! The comments for
+ * platform_device_put() explain this:
+ * '... Free all memory associated with a platform device.  This function must
+ * _only_ be externally called in error cases.  All other usage is a bug.'
+ * So this will be done as part of the regular cleanup but does require us to
+ * register the 'release' method!
+ */
+void release_myplatdev(struct device *dev)
+{
 	QP;
-	unregister_netdev(ndev);
-	free_netdev(ndev);
-	//return 0;
 }
 
 /*
@@ -314,7 +330,11 @@ static void vnet_remove(struct platform_device *pdev)
  */
 static struct platform_device veth0 = {
 	.name = DRVNAME,
+	.name = KBUILD_MODNAME,
 	.id = 0,
+	.dev = {
+		.release = release_myplatdev,
+	},
 };
 
 static struct platform_device *veth_platform_devices[] __initdata = {
