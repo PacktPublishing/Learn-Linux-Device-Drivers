@@ -134,7 +134,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
  free_dev:
 	kfree(dev);
  release_regions:
-	pci_release_regions(pdev);
+	pci_release_region(pdev, MEMORY_BAR);
  disable_device:
 	pci_disable_device(pdev);
 	return err;
