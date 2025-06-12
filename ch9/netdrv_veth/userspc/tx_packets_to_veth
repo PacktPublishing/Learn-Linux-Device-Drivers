@@ -51,6 +51,7 @@ IP_VETH="${IP_FIRST_INTF_SUBNET}.210"  # 210: randomly chosen
 
 IP_FIRST_INTF_NODE=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d", $4)}')
 DEST_IP_VETH_NODE=$((IP_FIRST_INTF_NODE+1))
+[[ ${DEST_IP_VETH_NODE} -ge 255 ]] && DEST_IP_VETH_NODE=253
 DEST_IP_VETH="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VETH_NODE}"
 #IP=10.0.2.101
 #DEST_IP=10.0.2.16
@@ -58,12 +59,6 @@ DEST_IP_VETH="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VETH_NODE}"
 ip link show | grep ${INTF} || die "interface \"${INTF}\" not visible?"
 sudo ip link set ${INTF} up || die "bringing intf \"${INTF}\" up failed"
 sudo ip addr add ${IP_VETH}/24 dev ${INTF} 2>/dev/null #|| die "assigning IPv4  addr to \"${INTF}\" failed"
-#ip link show ${INTF}
-
-# Running a ping in the bg seems to trigger the n/w interface issue
-# and then the driver gets the packets being transmitted
-# [?]
-#ping ${PING_IP} &
 
 TALKER=talker_dgram
 [[ ! -f ${TALKER} ]] && make
