@@ -94,11 +94,12 @@ struct veth_pvt_data {
  * The Tx entry point.
  * Runs in process context.
  * To get to the Tx path, try:
- * - running our "custom" simple datagram app "talker_dgram"
+ * - running our custom simple datagram "talker_dgram" userspace app
  *   ./talker_dgram <IP addr> "<some msg>"
  * - 'ping -c1 10.10.1.x , with 'x' != IP addr (5, in our current setup;
  *   also but realize that ping won't actually work on a local interface).
- * Use a network analyzer (eg Wireshark) to see packets flowing across the interface..
+ * Use a network analyzer (eg tcpdump/Wireshark) to see packets flowing across
+ * the interface!
  */
 static int tx_pkt_count;
 static int vnet_start_xmit(struct sk_buff *skb, struct net_device *netdev)
@@ -114,7 +115,7 @@ static int vnet_start_xmit(struct sk_buff *skb, struct net_device *netdev)
 	//SKB_PEEK(skb);
 
 /*
-   The to-be-Tx packet:
+   The to-be-Tx (UDP protocol) packet:
 Len:      2       14                    20                   8           x
          +----------------------------------------------------------------------+
          |  |  Eth II Hdr  |         IPv4 Hdr         |  UDP Hdr   |  Data      |
@@ -127,14 +128,15 @@ skb-> head data                                                        tail   en
 	/*---------Packet Filtering :) --------------*/
 	/* If the outgoing packet is not of the UDP protocol, discard it */
 	ip = ip_hdr(skb);
-	if (ip->protocol != IPPROTO_UDP) {	// not UDP proto?
+	if (ip->protocol != IPPROTO_UDP) {
 		pr_cont("x");
 		//pr_debug("not UDP,disregarding pkt..\n");
 		goto out_tx;
 	}
 	//SKB_PEEK(skb);
 
-	/* If the outgoing packet (of protocol UDP) does not have destination port=54295,
+	/*
+	 * If the outgoing (UDP protocol) packet does NOT have destination port=54295,
 	 * then it's not sent to our n/w interface via our talker_dgram app, so simply ignore it.
 	 */
 	udph = udp_hdr(skb);
@@ -152,7 +154,7 @@ skb-> head data                                                        tail   en
 	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, skb->head + 16 + 20 + 8, skb->len);
 #endif
 
-	/* Update stat counters; ugly with the silly time delta calculation... */
+	/* Update stat counters */
 	spin_lock(&vp->lock);
 	vp->txpktnum = ++tx_pkt_count;
 	vp->tx_bytes += skb->len;
