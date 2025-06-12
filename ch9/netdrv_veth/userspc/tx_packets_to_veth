@@ -16,13 +16,13 @@ echo >&2 "FATAL: $*" ; exit 1
 getIP()
 {
  [[ $# -ne 1 ]] && return
- ifconfig $1|grep -w 'inet' |awk '{print $2}'
+ ip addr show dev $1 | grep -w 'inet' | awk '{print $2}' | cut -d"/" -f1
 }
 
 #--- 'main'
 INTF=veth
 
-which ifconfig >/dev/null 2>&1 || die "ifconfig not installed? Pl install & retry"
+which ip >/dev/null 2>&1 || die "ip utility not installed? Pl install & retry"
 [[ $# -ne 1 ]] && die "Usage: ${name} number-of-packets-to-tx"
 NUM2TX=$1
 
@@ -55,15 +55,10 @@ DEST_IP_VETH="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VETH_NODE}"
 #IP=10.0.2.101
 #DEST_IP=10.0.2.16
 
-ip a |grep ${INTF} || die "Interface \"${INTF}\" not visible?"
-sudo ifconfig ${INTF} ${IP_VETH} up || die "bringing intf \"${INTF}\" up failed"
-ifconfig ${INTF}
-
-#LISTNR=listener_dgram
-#[[ ! -f ${LISTNR} ]] && make
-#pkill ${LISTNR}
-#echo "${name}: running listener process..."
-#[ -x ./${LISTNR} ] && ./${LISTNR} &
+ip link show | grep ${INTF} || die "interface \"${INTF}\" not visible?"
+sudo ip link set ${INTF} up || die "bringing intf \"${INTF}\" up failed"
+sudo ip addr add ${IP_VETH}/24 dev ${INTF} 2>/dev/null #|| die "assigning IPv4  addr to \"${INTF}\" failed"
+#ip link show ${INTF}
 
 # Running a ping in the bg seems to trigger the n/w interface issue
 # and then the driver gets the packets being transmitted
