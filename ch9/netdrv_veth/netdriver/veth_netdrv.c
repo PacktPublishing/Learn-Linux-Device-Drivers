@@ -102,11 +102,11 @@ struct veth_pvt_data {
  * the interface!
  */
 static int tx_pkt_count;
-static int vnet_start_xmit(struct sk_buff *skb, struct net_device *netdev)
+static int vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	const struct iphdr *ip;
 	const struct udphdr *udph;
-	struct veth_pvt_data *vp = netdev_priv(netdev);
+	struct veth_pvt_data *vp = netdev_priv(dev);
 
 	if (!skb) {		// paranoia!
 		pr_alert("skb NULL!\n");
@@ -162,36 +162,36 @@ skb-> head data                                                        tail   en
 
 #if 0
 	pr_debug("Emulating Rx by artificially invoking vnet_rx() now...\n");
-	vnet_rx((unsigned long)ndev, skb);
+	vnet_rx((unsigned long)dev, skb);
 #endif
  out_tx:
 	dev_kfree_skb(skb);
 	return 0;
 }
 
-static int vnet_open(struct net_device *ndev)
+static int vnet_open(struct net_device *dev)
 {
 	QP;
 
-	netif_carrier_on(ndev);
-	netif_start_queue(ndev);
+	netif_carrier_on(dev);
+	netif_start_queue(dev);
 	return 0;
 }
 
-static int vnet_stop(struct net_device *ndev)
+static int vnet_stop(struct net_device *dev)
 {
 	QP;
-	netif_stop_queue(ndev);
-	netif_carrier_off(ndev);
+	netif_stop_queue(dev);
+	netif_carrier_off(dev);
 
 	return 0;
 }
 
 // Do an 'ifconfig veth' to see the effect of this 'getstats' routine..
 static struct net_device_stats ndstats;
-static struct net_device_stats *vnet_get_stats(struct net_device *ndev)
+static struct net_device_stats *vnet_get_stats(struct net_device *dev)
 {
-	struct veth_pvt_data *vp = netdev_priv(ndev);
+	struct veth_pvt_data *vp = netdev_priv(dev);
 
 	spin_lock(&vp->lock);
 	ndstats.rx_packets = vp->rxpktnum;
@@ -203,7 +203,7 @@ static struct net_device_stats *vnet_get_stats(struct net_device *ndev)
 	return &ndstats;
 }
 
-static void vnet_tx_timeout(struct net_device *ndev, unsigned int txq)
+static void vnet_tx_timeout(struct net_device *dev, unsigned int txq)
 {
 	pr_info("!! Tx timed out !!\n");
 }
@@ -212,7 +212,6 @@ static const struct net_device_ops vnet_netdev_ops = {
 	.ndo_open = vnet_open,
 	.ndo_stop = vnet_stop,
 	.ndo_get_stats = vnet_get_stats,
-//      .ndo_do_ioctl = vnet_ioctl,
 	.ndo_start_xmit = vnet_start_xmit,
 	.ndo_tx_timeout = vnet_tx_timeout,
 	.ndo_validate_addr = eth_validate_addr,
