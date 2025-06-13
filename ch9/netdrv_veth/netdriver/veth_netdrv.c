@@ -215,6 +215,9 @@ static const struct net_device_ops vnet_netdev_ops = {
 //      .ndo_do_ioctl = vnet_ioctl,
 	.ndo_start_xmit = vnet_start_xmit,
 	.ndo_tx_timeout = vnet_tx_timeout,
+	.ndo_validate_addr = eth_validate_addr,
+// TODO
+//	.ndo_poll_controller = vnet_poll_controller, // can manually invoke the interrupt hdlr!
 };
 
 // ETH_ALEN is 6
