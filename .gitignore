@@ -1,0 +1,12 @@
+*/bkp/*
+.*
+.*.swp
+*.bkp
+bkp/
+*.patch
+*.dat
+*.o*
+*.ko*
+*.mod*
+*.mod.o.*
+*.symvers
