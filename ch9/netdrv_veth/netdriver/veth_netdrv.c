@@ -210,6 +210,18 @@ static void vnet_tx_timeout(struct net_device *dev, unsigned int txq)
 	pr_info("!! Tx timed out !!\n");
 }
 
+#ifdef CONFIG_NET_POLL_CONTROLLER
+static void vnet_poll_controller(struct net_device *dev)
+{
+#if 0
+	struct veth_pvt_data *priv = netdev_priv(dev);
+
+	my_interrupt(priv->irq, priv);
+#endif
+	QP;
+}
+#endif
+
 static const struct net_device_ops vnet_netdev_ops = {
 	.ndo_open = vnet_open,
 	.ndo_stop = vnet_stop,
@@ -217,12 +229,13 @@ static const struct net_device_ops vnet_netdev_ops = {
 	.ndo_start_xmit = vnet_start_xmit,
 	.ndo_tx_timeout = vnet_tx_timeout,
 	.ndo_validate_addr = eth_validate_addr,
-// TODO
-//#ifdef CONFIG_NET_POLL_CONTROLLER
-//	.ndo_poll_controller = vnet_poll_controller, 
+#if 0
+#ifdef CONFIG_NET_POLL_CONTROLLER
+	.ndo_poll_controller = vnet_poll_controller, 
            /* to support netconsole & netpoll; 
 	    * can manually invoke the interrupt hdlr! */
-//#endif
+#endif
+#endif
 };
 
 // ETH_ALEN is 6
