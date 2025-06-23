@@ -6,6 +6,9 @@
  * the kernel that 'this is a device', so we use the simplest possible platform device).
  * The driver creates a "virtual interface" named 'veth' on the system.
  *
+ *-----------------------------------------------------------------------------
+ * Transmit Path (Tx)
+ *-----------------------------------------------------------------------------
  * When our user-land datagram socket app (talker_dgram) sends network packet(s)
  * to the interface, the "packet sniffing" in the transmit routine confirms this.
  * It checks for a UDP packet with 'our' port number, and on finding these
@@ -23,8 +26,8 @@
  * 4. cd ../userspc
  * 5. ./runapp
  * ...
- * It should work.. watch the kernel log with 'journalctl -f -k'
-
+ * It should work.. keep an eye on the kernel log with 'journalctl -f -k' !
+ *
  *---------------------------------------------------------------------------------
  * Sample output when a UDP packet with the right port# is detected in the Tx path:
 [ ... ]
@@ -85,8 +88,11 @@ struct veth_pvt_data {
 	spinlock_t lock;
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
+	struct napi_struct napi;
+	struct hrtimer rx_timer;
 };
 
+//--------------------- Tx path -----------------------------------------------
 /*
  * The Tx entry point.
  * Runs in process context.
@@ -166,12 +172,50 @@ skb-> head data                                                        tail   en
 	return 0;
 }
 
+//--------------------- Rx path -----------------------------------------------
+#define ONE_MS	1000000
+
+/* This function - the hrtimer timeout - emulates the 'hardware interrupt' ! */
+static enum hrtimer_restart pseudo_rx_timer_func(struct hrtimer *t)
+{
+	struct veth_pvt_data *priv = container_of(t, struct veth_pvt_data, rx_timer);
+
+	napi_schedule(&priv->napi);
+
+	hrtimer_forward_now(t, ns_to_ktime(ONE_MS*100));	// 100 ms
+	return HRTIMER_RESTART;
+}
+
+static int pseudo_napi_poll(struct napi_struct *napi, int budget)
+{
+	struct veth_pvt_data *priv = container_of(napi, struct veth_pvt_data, napi);
+	struct sk_buff *skb;
+	int pkt_len = 64;
+
+	// Simulate receiving one network packet
+	skb = netdev_alloc_skb(priv->netdev, pkt_len);
+	if (!skb)
+		return 0;
+
+	skb_put(skb, pkt_len);
+	memset(skb->data, 0xAB, pkt_len);	// dummy data
+	skb->protocol = eth_type_trans(skb, priv->netdev);
+	netif_receive_skb(skb);
+
+	napi_complete_done(napi, 1);
+
+	return 1;
+}
+
+
 static int vnet_open(struct net_device *dev)
 {
 	struct veth_pvt_data *priv = netdev_priv(dev);
 
 	QP;
 	napi_enable(&priv->napi);
+	hrtimer_start(&priv->rx_timer, ns_to_ktime((ONE_MS) * 100), HRTIMER_MODE_REL);	// 100 ms
+	
 
 	netif_carrier_on(dev);
 	netif_start_queue(dev);
@@ -185,6 +229,8 @@ static int vnet_stop(struct net_device *dev)
 	QP;
 	netif_stop_queue(dev);
 	netif_carrier_off(dev);
+	napi_disable(&priv->napi);
+
 
 	return 0;
 }
@@ -266,6 +312,7 @@ static int vnet_probe(struct platform_device *pdev)
 
 	/* keep the default flags, just add NOARP */
 	netdev->flags |= IFF_NOARP;
+	netdev->features |= NETIF_F_HW_CSUM;
 
 	netdev->watchdog_timeo = 8 * HZ;
 	spin_lock_init(&priv->lock);
@@ -273,11 +320,18 @@ static int vnet_probe(struct platform_device *pdev)
 	netdev->netdev_ops = &vnet_netdev_ops;
 	platform_set_drvdata(pdev, priv);
 
+	netif_napi_add(netdev, &priv->napi, pseudo_napi_poll);
+
+	hrtimer_init(&priv->rx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	priv->rx_timer.function = pseudo_rx_timer_func;
+
 	res = register_netdev(netdev);
 	if (res) {
 		pr_alert("failed to register net device!\n");
+		netif_napi_del(&priv->napi);
 		return res;
 	}
+	pr_info("pseudo (veth) NIC registered, network interface name %s\n", INTF_NAME);
 
 	return 0;
 }
@@ -289,6 +343,11 @@ static void vnet_remove(struct platform_device *pdev)
 
 	QP;
 	unregister_netdev(netdev);
+	netif_napi_del(&priv->napi);
+	/* We don't need to do the typical
+	 * free_netdev(netdev);
+	 * as we used the managed alloc (devm_alloc_etherdev()) !
+	 */
 }
 
 static struct platform_driver virtnet = {
