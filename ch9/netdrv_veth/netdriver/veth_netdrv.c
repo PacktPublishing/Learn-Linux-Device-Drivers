@@ -1,12 +1,10 @@
 /*
  * Virtual Ethernet - veth - NIC driver.
  *
- *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- * This version has a few deliberate bugs.
- * Run, test, catch and fix 'em!
- *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * This network driver creates a "virtual interface" named 'veth' on the system.
+ * This NIC driver is for a pseudo network device (one that doesn't even exist!).
+ * We emulate the NIC via a very simple platform device (we need something to tell
+ * the kernel that 'this is a device', so we use the simplest possible platform device).
+ * The driver creates a "virtual interface" named 'veth' on the system.
  *
  * When our user-land datagram socket app (talker_dgram) sends network packet(s)
  * to the interface, the "packet sniffing" in the transmit routine confirms this.
@@ -84,10 +82,9 @@ Len:       2       14                    20                   8           x
 
 struct veth_pvt_data {
 	struct net_device *netdev;
+	spinlock_t lock;
 	int txpktnum, rxpktnum;
 	int tx_bytes, rx_bytes;
-	unsigned int data_xform;
-	spinlock_t lock;
 };
 
 /*
@@ -249,11 +246,8 @@ static int vnet_probe(struct platform_device *pdev)
 	strscpy(netdev->name, INTF_NAME, strlen(INTF_NAME) + 1);
 	dev_addr_set(netdev, veth_MAC_addr);
 
-#if 0
-	MAC addr..ndo methods:open xmit stop get_stats do_ioctl ? iomem addr irq
-#endif
 	if (!is_valid_ether_addr(netdev->dev_addr)) {
-		pr_debug("%s: Invalid ethernet MAC address. Please set using ifconfig\n",
+		pr_debug("%s: Invalid ethernet MAC address. Please set using ip / ifconfig\n",
 			 netdev->name);
 	}
 
@@ -271,7 +265,6 @@ static int vnet_probe(struct platform_device *pdev)
 		pr_alert("failed to register net device!\n");
 		return res;
 	}
-	vp->netdev = netdev;
 
 	return 0;
 }
@@ -285,47 +278,6 @@ static void vnet_remove(struct platform_device *pdev)
 	unregister_netdev(netdev);
 }
 
-/*
- * FIXME: [  579.273860] Device 'veth_netdrv.0' does not have a release() function,
- * it is broken and must be fixed. See Documentation/core-api/kobject.rst.
-...
-When a reference is released, the call to kobject_put() will decrement the
-201 reference count and, possibly, free the object. Note that kobject_init()
-202 sets the reference count to one, so the code which sets up the kobject will
-203 need to do a kobject_put() eventually to release that reference.
-...
- * Specifying an explicit 'release' method as part of the platform device solves this.
- * We don't actually have to do anything here, it's automatic! The comments for
- * platform_device_put() explain this:
- * '... Free all memory associated with a platform device.  This function must
- * _only_ be externally called in error cases.  All other usage is a bug.'
- * So this will be done as part of the regular cleanup but does require us to
- * register the 'release' method!
- */
-void release_myplatdev(struct device *dev)
-{
-	QP;
-}
-
-/*
- * Setup a bare-bones platform device & associated driver.
- * Platform devices get bound to their driver simply on the basis of the 'name' field;
- * if they match, the driver core "binds" them, invoking the 'probe' routine. Conversely, the
- * 'remove' method is invoked at unload/shutdown.
- * Done here mainly so that we have a 'probe' method that will get invoked on it's registration.
- */
-static struct platform_device veth0 = {
-	.name = KBUILD_MODNAME,
-	.id = 0,
-	.dev = {
-		.release = release_myplatdev,
-	},
-};
-
-static struct platform_device *veth_platform_devices[] __initdata = {
-	&veth0,
-};
-
 static struct platform_driver virtnet = {
 	.probe = vnet_probe,
 	.remove = vnet_remove,
@@ -334,6 +286,7 @@ static struct platform_driver virtnet = {
 		.owner = THIS_MODULE,
 	},
 };
+static struct platform_device *pseudo_dev;
 
 static int __init vnet_init(void)
 {
@@ -361,16 +314,15 @@ static int __init vnet_init(void)
 	 * we merely and 'manually' instantiate a 'dummy' device - the platform device!
 	 * We pretend it's our NIC and have fun 'driving' it.
 	 */
-	res = platform_add_devices(veth_platform_devices, ARRAY_SIZE(veth_platform_devices));
-	if (res) {
-		pr_alert("platform_add_devices failed!\n");
-		goto out_fail_pad;
-	}
+	pseudo_dev = platform_device_register_simple(KBUILD_MODNAME, -1, NULL, 0);
+	if (IS_ERR(pseudo_dev))
+		return PTR_ERR(pseudo_dev);
 
 	res = platform_driver_register(&virtnet);
 	if (res) {
 		pr_alert("platform_driver_register failed!\n");
-		goto out_fail_pdr;
+		platform_device_unregister(pseudo_dev);
+		return res;
 	}
 	/* Successful platform_driver_register() will cause the registered 'probe'
 	 * method to be invoked now..
@@ -378,18 +330,12 @@ static int __init vnet_init(void)
 
 	pr_info("loaded.\n");
 	return res;
-
- out_fail_pdr:
-	platform_driver_unregister(&virtnet);
-	platform_device_unregister(&veth0);
- out_fail_pad:
-	return res;
 }
 
 static void __exit vnet_exit(void)
 {
 	platform_driver_unregister(&virtnet);
-	platform_device_unregister(&veth0);
+	platform_device_unregister(pseudo_dev);
 	pr_info("unloaded.\n");
 }
 
