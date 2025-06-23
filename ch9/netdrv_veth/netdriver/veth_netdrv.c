@@ -106,7 +106,7 @@ static int vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	const struct iphdr *ip;
 	const struct udphdr *udph;
-	struct veth_pvt_data *vp = netdev_priv(dev);
+	struct veth_pvt_data *priv = netdev_priv(dev);
 
 	if (!skb) {		// paranoia!
 		pr_alert("skb NULL!\n");
@@ -155,10 +155,10 @@ skb-> head data                                                        tail   en
 #endif
 
 	/* Update stat counters */
-	spin_lock(&vp->lock);
-	vp->txpktnum = ++tx_pkt_count;
-	vp->tx_bytes += skb->len;
-	spin_unlock(&vp->lock);
+	spin_lock(&priv->lock);
+	priv->txpktnum = ++tx_pkt_count;
+	priv->tx_bytes += skb->len;
+	spin_unlock(&priv->lock);
 
 #if 0
 	pr_debug("Emulating Rx by artificially invoking vnet_rx() now...\n");
@@ -171,7 +171,10 @@ skb-> head data                                                        tail   en
 
 static int vnet_open(struct net_device *dev)
 {
+	struct veth_pvt_data *priv = netdev_priv(dev);
+
 	QP;
+	napi_enable(&priv->napi);
 
 	netif_carrier_on(dev);
 	netif_start_queue(dev);
@@ -180,6 +183,8 @@ static int vnet_open(struct net_device *dev)
 
 static int vnet_stop(struct net_device *dev)
 {
+	struct veth_pvt_data *priv = netdev_priv(dev);
+
 	QP;
 	netif_stop_queue(dev);
 	netif_carrier_off(dev);
@@ -191,14 +196,14 @@ static int vnet_stop(struct net_device *dev)
 static struct net_device_stats ndstats;
 static struct net_device_stats *vnet_get_stats(struct net_device *dev)
 {
-	struct veth_pvt_data *vp = netdev_priv(dev);
+	struct veth_pvt_data *priv = netdev_priv(dev);
 
-	spin_lock(&vp->lock);
-	ndstats.rx_packets = vp->rxpktnum;
-	ndstats.rx_bytes = vp->rx_bytes;
-	ndstats.tx_packets = vp->txpktnum;
-	ndstats.tx_bytes = vp->tx_bytes;
-	spin_unlock(&vp->lock);
+	spin_lock(&priv->lock);
+	ndstats.rx_packets = priv->rxpktnum;
+	ndstats.rx_bytes = priv->rx_bytes;
+	ndstats.tx_packets = priv->txpktnum;
+	ndstats.tx_bytes = priv->tx_bytes;
+	spin_unlock(&priv->lock);
 
 	return &ndstats;
 }
@@ -229,16 +234,17 @@ static u8 veth_MAC_addr[ETH_ALEN] = { 0x48, 0x0F, 0x0E, 0x0D, 0x0A, 0x02 };
 static int vnet_probe(struct platform_device *pdev)
 {
 	struct net_device *netdev = NULL;
-	struct veth_pvt_data *vp;
+	struct veth_pvt_data *priv;
 	int res = 0;
 
 	QP;
-	netdev = devm_alloc_etherdev(&pdev->dev, sizeof (*vp));
+	netdev = devm_alloc_etherdev(&pdev->dev, sizeof (*priv));
 	if (!netdev)
 		return -ENOMEM;
 
 	SET_NETDEV_DEV(netdev, &pdev->dev);
-	vp = netdev_priv(netdev);
+	priv = netdev_priv(netdev);
+	priv->netdev = netdev;
 	ether_setup(netdev);
 	strscpy(netdev->name, INTF_NAME, strlen(INTF_NAME) + 1);
 	dev_addr_set(netdev, veth_MAC_addr);
@@ -255,10 +261,10 @@ static int vnet_probe(struct platform_device *pdev)
 	netdev->flags |= IFF_NOARP;
 
 	netdev->watchdog_timeo = 8 * HZ;
-	spin_lock_init(&vp->lock);
+	spin_lock_init(&priv->lock);
 	/* Initializing the netdev ops struct is essential; else, we Oops.. */
 	netdev->netdev_ops = &vnet_netdev_ops;
-	platform_set_drvdata(pdev, vp);
+	platform_set_drvdata(pdev, priv);
 
 	res = register_netdev(netdev);
 	if (res) {
@@ -272,8 +278,8 @@ static int vnet_probe(struct platform_device *pdev)
 
 static void vnet_remove(struct platform_device *pdev)
 {
-	struct veth_pvt_data *vp = platform_get_drvdata(pdev);
-	struct net_device *netdev = vp->netdev;
+	struct veth_pvt_data *priv = platform_get_drvdata(pdev);
+	struct net_device *netdev = priv->netdev;
 
 	QP;
 	unregister_netdev(netdev);
