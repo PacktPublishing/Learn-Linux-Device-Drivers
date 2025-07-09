@@ -19,17 +19,32 @@ first_time_setup()
 ISO=alpine.iso
 DISK=alpine.img
 
-qemu-system-x86_64 \
+QEMU_CMD="qemu-system-x86_64 \
   -m 512M \
-  -enable-kvm \
   -smp 2 \
+  -enable-kvm \
   -cpu host \
   -nographic \
   -net nic -net user \
-  -drive file="$DISK",format=qcow2 \
-  -cdrom "$ISO" \
+  -drive file="${DISK}",format=qcow2 \
+  -cdrom "${ISO}" \
   -boot once=d \
-  -device pci-testdev
+  -device pci-testdev"
+
+# No KVM? If so, lose the -enable-kvm & -cpu host options
+lsmod | egrep -w "kvm-intel|kvm-amd" >/dev/null || \
+ QEMU_CMD="qemu-system-x86_64 \
+  -m 512M \
+  -smp 2 \
+  -nographic \
+  -net nic -net user \
+  -drive file="${DISK}",format=qcow2 \
+  -cdrom "${ISO}" \
+  -boot once=d \
+  -device pci-testdev"
+
+echo "${QEMU_CMD}"
+eval "${QEMU_CMD}"
 
 #---
 # Once in the guest, do these steps:

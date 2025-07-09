@@ -16,20 +16,38 @@ setup the VM, and then run this script"
 }
 
 DISK=alpine.img
-qemu-system-x86_64 \
+QEMU_CMD="qemu-system-x86_64 \
   -m 512M \
   -smp 2 \
-  -cpu host \
   -enable-kvm \
+  -cpu host \
   -nographic \
   -net nic -net user \
-  -drive file="$DISK",format=qcow2 \
+  -drive file="${DISK}",format=qcow2 \
+  -boot once=d \
   -device pci-testdev \
-  -device virtio-serial-pci,id=vs0
+  -device virtio-serial-pci,id=vs0"
+
+# No KVM? If so, lose the -enable-kvm & -cpu host options
+lsmod | egrep -w "kvm-intel|kvm-amd" >/dev/null || \
+ QEMU_CMD="qemu-system-x86_64 \
+  -m 512M \
+  -smp 2 \
+  -nographic \
+  -net nic -net user \
+  -drive file="${DISK}",format=qcow2 \
+  -boot once=d \
+  -device pci-testdev \
+  -device virtio-serial-pci,id=vs0"
+
+echo "${QEMU_CMD}"
+eval "${QEMU_CMD}"
 
 #--- Reg the -enable-kvm option:
 # Keeping the -enable-kvm is (really) good for performance; however,
-# it seems to only support one instance of a KVM-enabled guest on a given
+# it only seems to work if:
+# a) your host (which could itslef be a guest!) supports KVM, and
+# b) only support one instance of a KVM-enabled guest on a given
 # system. Hence, it fails to boot if you have another hypervisor - like Oracle
 # VirtualBox that's also using kvm - running simultaneously.
 #---
