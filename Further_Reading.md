@@ -1,5 +1,5 @@
 # Further Reading
-**For the book "Learn Linux Device Drivers", Kaiwan N Billimoria, Packt (2025).**
+**For the book "Linux Device Drivers in Action", Kaiwan N Billimoria, Packt (2026).**
 
 **Book GitHub repo: https://github.com/PacktPublishing/Learn-Linux-Device-Drivers**
 
@@ -13,24 +13,15 @@ For your convenience, below are chapter-wise links to the *Further Reading* note
 *Section 1: The Basics*
 
  - [Chapter 1, Kernel workspace setup](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-1-kernel-development-workspace-setup---further-reading)
- - [Chapter 2, Building the 6.x Linux kernel from source - Part 1](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-2-building-the-linux-kernel-from-source-part-1---further-reading)
- - [Chapter 3, Building the 6.x Linux kernel from source - Part 2](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-3-building-the-linux-kernel-from-source-part-2---further-reading)
- - [Chapter 4, Writing your first kernel module - Part 1](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-4-writing-your-first-kernel-module-lkms-part-1---further-reading)
- - [Chapter 5, Writing your first kernel module - Part 2](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-5-writing-your-first-kernel-module-lkms-part-2---further-reading)
+
 
 *Section 2: Understanding and Working with the Kernel*
 
  - [Chapter 6, Kernel Internals Essentials - Processes and Threads](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-6-kernel-internals-essentials---processes-and-threads---further-reading)
- - [Chapter 7, Memory Management Internals Essentials](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-7-memory-management-internals-essentials---further-reading)
- - [Chapter 8, Kernel Memory Allocation for Module Authors - Part 1](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-8-kernel-memory-allocation-for-module-authors-part-1---further-reading)
- - [Chapter 9, Kernel Memory Allocation for Module Authors - Part 2](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-9-kernel-memory-allocation-for-module-authors-part-2---further-reading)
- - [Chapter 10, The CPU Scheduler, Part 1](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-10-the-cpu-scheduler-part-1---further-reading)
- - [Chapter 11, The CPU Scheduler, Part 2](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-11-the-cpu-scheduler-part-2---further-reading)
 
 *Section 3: Delving Deeper*
 
  - [Chapter 12, Kernel Synchronization - Part 1](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-12-kernel-synchronization-part-1---further-reading)
- - [Chapter 13, Kernel Synchronization - Part 2](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-13-kernel-synchronization-part-2---further-reading)
 
 <br>
 
@@ -136,14 +127,79 @@ Miscellaneous:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
-## Chapter 9, Writing a PCIe Device Driver - Further Reading
+## Chapter 8, Writing a PCIe skeleton driver - Further Reading
 
+- [PCI SIG - Special Interest Group](https://pcisig.com/specifications) - PCI standards documents, etc
+- Official kernel doc: [How To Write Linux PCI Drivers](https://docs.kernel.org/PCI/pci.html)
+- Tutorial: [Writing a PCI device driver for Linux, Oleg Kutkov, January 2021](https://olegkutkov.me/2021/01/07/writing-a-pci-device-driver-for-linux/)
 - [Wrt Linux, what exactly is SRIOV? [Credit: ChatGPT-4]](https://chatgpt.com/share/6840214e-99f0-8011-8fce-06889b7e9d3d)
-
-
 
 
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
+
+## Chapter 9, Writing a NIC driver - Further Reading
+
+- Required reading: [Internet protocol suite, Wikipedia article](https://en.wikipedia.org/wiki/Internet_protocol_suite#Comparison_of_TCP/IP_and_OSI_layering)
+
+- Book: [Understanding Linux Network Internals, C Benvuneti, O'Reilly Media, Feb 2006](https://a.co/d/dlx5GjY)
+- [Linux ip Command with Examples, M Aleksic, Sept 2024](https://phoenixnap.com/kb/linux-ip-command-examples)
+- Notifier Chain mechanism
+    - [Mastering Notifier Chains and Learn how Reboot Notifiers in the Linux Kernel is implemented, Faayiz M, Mar 2024](https://www.linkedin.com/pulse/mastering-notifier-chains-learn-how-reboot-notifiers-linux-faayiz-m-gc5nc/)
+    - [Notifier Chains, Clemson University](https://people.computing.clemson.edu/~westall/853/notes/notifier.pdf)
+
+- [ChatGPT 4: Qs> When i send or receive network packets (or just ping) how can i see which network interface is actually used to perform the tx or rx?](https://chatgpt.com/share/684bc0fd-0a94-8011-8149-e1153a5af398)
+-  [Netconsole: official kernel doc, v6.12](https://www.kernel.org/doc/html/v6.12/networking/netconsole.html#netconsole)
+- [Monitoring and Tuning the Linux Networking Stack: Sending Data, Joe Damato, packagecloud, Feb 2017](https://blog.packagecloud.io/monitoring-tuning-linux-networking-stack-sending-data/)
+- [Illustrated Guide to Monitoring and Tuning the Linux Networking Stack: Receiving Data, Joe Damato, packagecloud, Mar 2022](https://blog.packagecloud.io/illustrated-guide-monitoring-tuning-linux-networking-stack-receiving-data/)
+ 
+- Linux Socket Buffer (SKB)
+    - Though old, still excellent: [How SKB's Work (1), Dave Miller](http://oldvger.kernel.org/~davem/skb_data.html)
+    - [How SKB's Work (2), Dave Miller](http://oldvger.kernel.org/~davem/skb.html)
+    - [struct sk_buff, official Linux kernel doc](https://docs.kernel.org/networking/skbuff.html)
+    - [Printing sk_buff data, Oleg Kutkov, Oct 2019](https://olegkutkov.me/2019/10/17/printing-sk_buff-data/)
+
+- [DMA: LWN kernel index of articles](https://lwn.net/Kernel/Index/#Direct_memory_access)
+
+- Memory Barriers
+    - PDF: ['Memory Barriers: a Hardware View for Software Hackers', Paul E. McKenney, IBM LTC, June 2010](http://www.rdrop.com/~paulmck/scalability/paper/whymb.2010.06.07c.pdf)
+    - [Memory Barriers Are Like Source Control Operations, Preshing on Programming blog, July 2012](https://preshing.com/20120710/memory-barriers-are-like-source-control-operations/)
+
+- New API (NAPI)
+    - Official kernel doc: [NAPI](https://docs.kernel.org/networking/napi.html)
+    - [Linux Foundation wiki site: napi](https://wiki.linuxfoundation.org/networking/napi)
+
+- Netfilter
+    - [Packet Flow, Netfilter and Iptables, Dipak KR Das, Medium](https://medium.com/@dipakkrdas/netfilter-and-iptables-f8a946bb83af)
+    - [Netfilter’s flowtable infrastructure, official kernel doc](https://docs.kernel.org/networking/nf_flowtable.html)
+    - [Linux NetFilter, IP Tables and Conntrack Diagrams, nerdalert, GitHub Gists](https://gist.github.com/nerdalert/a1687ae4da1cc44a437d)
+    - [Linux network programming | Netfilter Framework- Part -1 | Easy Explanation | Youtube](https://www.youtube.com/watch?v=vKbjhU--Lok)
+
+- NIC Offloading
+    - [TCP offload engine](https://en.wikipedia.org/wiki/TCP_offload_engine)
+    - [JLS2009: Generic receive offload, Jon Corbet, LWN, Oct 2009](https://lwn.net/Articles/358910/)
+- Ethtool
+    - [Using ethtool in Linux, Chin Ming JunMar 2024](https://www.baeldung.com/linux/using-ethtool)
+    - [ethtool(8) — Linux manual page](https://man7.org/linux/man-pages/man8/ethtool.8.html)
+- Network visualization tools
+    - [Traceroute Online - Trace and Map the Packets Path](https://traceroute-online.com/)
+    - [16 network visualization tools that you should know!, Dr. Veronica Espinoza, Medium, Nov 2023](https://medium.com/@vespinozag/16-network-visualization-tools-that-you-should-know-2c26957b707e)
+    - [What are the Network Visualization Tools you guys use for the audit purpose?, Reddit](https://www.reddit.com/r/sysadmin/comments/1bpmisl/what_are_the_network_visualization_tools_you_guys/)
+
+
+## Chapter 10, Writing an Input device driver - Further Reading
+
+- [Wayland (protocol)](https://en.wikipedia.org/wiki/Wayland_(protocol))
+- [What is libinput?](https://wayland.freedesktop.org/libinput/doc/latest/what-is-libinput.html)
+- [Mouse Events and Input Event Interface in Linux, baeldung, Mar 2024](https://www.baeldung.com/linux/mouse-events-input-event-interface)
+- []()
+- []()
+- []()
+
+
+...
+
+## Chapter 1x, Block drivers - Further Reading
+- [Linux Multi-Queue Block IO Queueing Mechanism (blk-mq) Details, Werner Fischer, Thomas Krenn, 2015](https://www.thomas-krenn.com/en/wiki/Linux_Multi-Queue_Block_IO_Queueing_Mechanism_(blk-mq)_Details)
 
 [End Doc]
