@@ -1,0 +1,39 @@
+/*
+ * DTBO - DT overlay
+ * Inspired by - on the default Debian OS BBB rootfs :
+ *  /opt/source/dtb-5.10-ti/src/arm/overlays/BB-I2C2-BME680.dts
+ */
+/dts-v1/;
+/plugin/;
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		RPI-TEST-OVERLAY.kernel = "Tue Oct 14 22:31:00 2000";
+		/* This should be '__TIMESTAMP__' but that's defined in kernel src only..
+		 * So have simply hardcoded it here to some timestamp
+		 */
+	};
+};
+
+/* Ref: https://elixir.bootlin.com/linux/v6.11.2/source/Documentation/devicetree/overlay-notes.rst
+ * --- overlay target location by explicit path
+ * [ocp = on-chip peripheral]
+ * Note: the R Pi family doesn't have the 'ocp' node, so we'll just use '/' as the parent node
+ */
+&{/soc} {
+	/* Our very simple pushbutton input driver */
+	btn0: pushbutton_device {
+	//btn0: gpio-pushb {
+		compatible = "input_demo,pushb_generic";
+		label = "user-key";
+		purpose = "launch button";
+		my_value = <42>;
+		pushb-gpio = <&gpio 21 0>; /* 0=GPIO_ACTIVE_LOW>;  GPIO21 */
+		debounce-interval = <20>;  /* milliseconds */
+	        //wakeup-source;  /* Allow this key to wake system from suspend */
+		status = "okay";
+	};
+};
