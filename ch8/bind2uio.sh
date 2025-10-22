@@ -42,7 +42,7 @@ lspci -nn | grep "${PCI_BDF}.*${PCI_VID_PID}" >/dev/null || die "No PCI device m
 # reset
 runcmd "echo -n "0000:${PCI_BDF}" > /sys/bus/pci/drivers/uio_pci_generic/unbind 2>/dev/null"
 
-runcmd "lspci -nnk|grep -i -A3 ${PCI_DEVNAME}"
+runcmd "lspci -nnk|grep -i -A3 \"${PCI_DEVNAME}\""
 runcmd "modprobe uio_pci_generic 2>/dev/null"
 
 PCI_VID_PID_SPACESEP=$(echo ${PCI_VID_PID} | sed -e "s/:/ /")
