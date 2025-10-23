@@ -26,14 +26,11 @@
 &{/soc} {
 	/* Our very simple pushbutton input driver */
 	btn0: pushbutton_device {
-	//btn0: gpio-pushb {
-		compatible = "input_demo,pushb_generic";
-		label = "user-key";
+		compatible = "input_demo,pushbtn_simple";
 		purpose = "launch button";
-		my_value = <42>;
 		pushb-gpio = <&gpio 21 0>; /* 0=GPIO_ACTIVE_LOW>;  GPIO21 */
 		debounce-interval = <20>;  /* milliseconds */
-	        //wakeup-source;  /* Allow this key to wake system from suspend */
+	        wakeup-source;  /* Allow this key to wake system from suspend */
 		status = "okay";
 	};
 };
