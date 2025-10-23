@@ -56,7 +56,8 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	int state;
 
 	/* Read current GPIO state */
-	state = gpiod_get_value_cansleep(pushb->gpio);
+	state = gpiod_get_value(pushb->gpio);
+	//state = gpiod_get_value_cansleep(pushb->gpio);
 	pr_debug("irq:count=%u:btn-state=%d\n", refcount_read(&pushb->irqcount), state);
 
 	/* Report key event (KEY_xxx from linux/input-event-codes.h) */
