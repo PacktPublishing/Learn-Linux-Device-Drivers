@@ -80,13 +80,14 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 
 	err = pci_enable_device(pdev);
 	if (err) {
-		pr_err("enable PCI device failed\n");
+		return dev_err_probe(&pdev->dev, err, "failed to enable the pci device\n");
+		//pr_err("failed to enable the pci device\n");
 		return err;
 	}
 
 	err = pci_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
 	if (err) {
-		pr_err("request PCI region 0 (BAR0) failed\n");
+		dev_err_probe(&pdev->dev, err, "request PCI region BAR%d failed\n", MEMORY_BAR);
 		goto disable_device;
 	}
 
@@ -104,8 +105,8 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	dev->bar_len = pci_resource_len(pdev, MEMORY_BAR);
 	dev->bar_addr = pci_ioremap_bar(pdev, MEMORY_BAR);
 	if (!dev->bar_addr) {
-		pr_err("remap BAR0 failed\n");
-		err = -EIO;
+		err = -PTR_ERR(dev->bar_addr);
+		dev_err_probe(&pdev->dev, err, "remap BAR%d failed\n", MEMORY_BAR);
 		goto free_dev;
 	}
 
@@ -113,14 +114,14 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	dev->msix_entries[0].entry = 0;
 	err = pci_enable_msix_range(pdev, dev->msix_entries, NUM_MSIX_VECTORS, NUM_MSIX_VECTORS);
 	if (err < 0) {
-		pr_err("enable MSI-X failed: %d\n", err);
+		dev_err_probe(&pdev->dev, err, "enable MSI-X failed\n");
 		goto unmap_bar;
 	}
 
 	err = request_irq(dev->msix_entries[0].vector, pci_skeleton_irq_handler,
 			  0, KBUILD_MODNAME, dev);
 	if (err) {
-		pr_err("request IRQ# %d failed\n", dev->msix_entries[0].vector);
+		dev_err_probe(&pdev->dev, err, "request IRQ# %d failed\n", dev->msix_entries[0].vector);
 		goto disable_msix;
 	}
 
