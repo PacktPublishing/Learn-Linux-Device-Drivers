@@ -9,13 +9,13 @@
 # uio_pci_generic driver.
 
 # Boot into the Qemu VM off it's disk
-[[ ! -f ./alpine.img ]] && {
+DISK=alpine.img
+[[ ! -f ./${DISK} ]] && {
    echo "The Qemu QCOW disk isn't ready; run the qemu_setup_alpine.sh script,
 setup the VM, and then run this script"
    exit 1
 }
 
-DISK=alpine.img
 QEMU_CMD="qemu-system-x86_64 \
   -m 512M \
   -smp 2 \

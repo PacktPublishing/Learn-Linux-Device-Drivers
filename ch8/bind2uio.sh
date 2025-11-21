@@ -37,6 +37,7 @@ runcmd()
 [[ $(id -u) -ne 0 ]] && die "Need root"
 hash lspci || die "Install lspci util"
 # Does the PCI device exist?
+echo "Scanning via lspci..."
 lspci -nn | grep "${PCI_BDF}.*${PCI_VID_PID}" >/dev/null || die "No PCI device matching address \"${PCI_BDF}\" and [VID:PID] \"${PCI_VID_PID}\""
 
 # reset
