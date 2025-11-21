@@ -105,7 +105,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	dev->bar_len = pci_resource_len(pdev, MEMORY_BAR);
 	dev->bar_addr = pci_ioremap_bar(pdev, MEMORY_BAR);
 	if (!dev->bar_addr) {
-		err = -PTR_ERR(dev->bar_addr);
+		err = PTR_ERR(dev->bar_addr);
 		dev_err_probe(&pdev->dev, err, "remap BAR%d failed\n", MEMORY_BAR);
 		goto free_dev;
 	}
