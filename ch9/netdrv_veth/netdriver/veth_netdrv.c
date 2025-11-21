@@ -367,9 +367,9 @@ static int __init vnet_init(void)
 	pr_info("Initializing our simple network driver\n");
 
 	/*
-	 * Here, we're simply 'manually' adding a platform device (old-style)
-	 * via the platform_add_devices() API, which is a wrapper over
-	 * platform_device_register().
+	 * Here, we're simply 'manually' adding the simplest
+	 * possible platform device (old-style) via the
+	 * platform_device_register_simple() API.
 	 *
 	 * This approach's considered a 'legacy'
 	 * one and should not be generally used; in general, the modern model
@@ -383,7 +383,7 @@ static int __init vnet_init(void)
 	 * at early boot.. 
 	 *
 	 * But here, in order to have a 'device' as required by the LDM,
-	 * we merely and 'manually' instantiate a 'dummy' device - the platform device!
+	 * we merely and 'manually' instantiate a pseudo device - the platform device!
 	 * We pretend it's our NIC and have fun 'driving' it.
 	 */
 	pseudo_dev = platform_device_register_simple(KBUILD_MODNAME, -1, NULL, 0);
@@ -415,6 +415,7 @@ module_init(vnet_init);
 module_exit(vnet_exit);
 
 MODULE_DESCRIPTION("Simple demo virtual ethernet (NIC) driver; allows a user \
-app to 'transmit' (to local loopback only) a UDP packet via this network driver");
+app to 'transmit' a UDP packet (to local loopback only) and 'receive' a simple \
+packet via hrtimer timeout");
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_LICENSE("Dual MIT/GPL");
