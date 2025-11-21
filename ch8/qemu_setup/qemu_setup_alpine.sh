@@ -7,9 +7,11 @@
 # First time setup
 # Boot into the Qemu VM via the 'live CD' ISO image, and then set it up
 
+ALPINE_DOWNLOAD_URL=https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/x86_64/alpine-standard-3.20.0-x86_64.iso
+
 first_time_setup()
 {
-  wget https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/x86_64/alpine-standard-3.20.0-x86_64.iso -O alpine.iso
+  wget ${ALPINE_DOWNLOAD_URL} -O alpine.iso
   qemu-img create -f qcow2 alpine.img 2G
 }
 
