@@ -79,11 +79,11 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	pr_info("probe() called for device %04x:%04x\n", pdev->vendor, pdev->device);
 
 	err = pci_enable_device(pdev);
-	if (err) {
+	if (err)
+		/* Tip: in probe() error code paths, pl use the dev_err_probe();
+		 * it has benefits, as explained in the text
+		 */
 		return dev_err_probe(&pdev->dev, err, "failed to enable the pci device\n");
-		//pr_err("failed to enable the pci device\n");
-		return err;
-	}
 
 	err = pci_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
 	if (err) {
