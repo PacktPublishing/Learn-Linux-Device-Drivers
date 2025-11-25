@@ -85,7 +85,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		 */
 		return dev_err_probe(&pdev->dev, err, "failed to enable the pci device\n");
 
-	err = pci_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
+	err = pcim_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
 	if (err) {
 		dev_err_probe(&pdev->dev, err, "request PCI region BAR%d failed\n", MEMORY_BAR);
 		goto disable_device;
@@ -154,7 +154,12 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 			iounmap(dev->bar_addr);
 		kfree(dev);
 	}
-	pci_release_region(pdev, MEMORY_BAR);
+	/*
+	 * pci_release_region(pdev, MEMORY_BAR);
+	 * This is commented out precisely as we used the *resource managed*
+	 * ver of the API - pcim_request_region(); the kernel will thus take
+	 * care of releasing it on driver removal or device detach.
+	 */
 	pci_disable_device(pdev);
 }
 
