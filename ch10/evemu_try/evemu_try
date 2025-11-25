@@ -1,0 +1,30 @@
+#!/bin/bash
+# evemu_try
+name=$(basename $0)
+
+die()
+{
+echo >&2 "FATAL: $*" ; exit 1
+}
+warn()
+{
+echo >&2 "WARNING: $*"
+}
+# runcmd
+# Parameters
+#   $1 ... : params are the command to run
+runcmd()
+{
+	[[ $# -eq 0 ]] && return
+	echo "$@"
+	eval "$@"
+}
+
+#--- 'main'
+which evemu-play >/dev/null 2>&1 || die "evemu-play not found? (install the evemu-tools pkg first)"
+FILE2PLAY=kbd_tryme.evemu
+[[ ! -f ${FILE2PLAY} ]] && die "The file to 'play' \"${FILE2PLAY}\" isn't here?"
+
+runcmd "sudo evemu-play ${FILE2PLAY}"
+
+exit 0
