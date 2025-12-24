@@ -1,0 +1,64 @@
+/*
+ * DTBO - DT overlay
+ * Inspired by - on the default Debian OS BBB rootfs :
+ *  /opt/source/dtb-5.10-ti/src/arm/overlays/BB-I2C2-BME680.dts
+ *
+ * DT overlay for the simple pushbutton platform input driver for the TI
+ * BeagleBone Black (bbb) board
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/am33xx.h>
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		BBB-GPIO-PUSHBTN.kernel = "Tue Oct 14 22:31:00 2025";
+		/* This should be '__TIMESTAMP__' but that's defined in kernel src only..
+		 * So have simply hardcoded it here to some random timestamp
+		 */
+	};
+};
+
+&am33xx_pinmux {
+	pushbutton_pins: pinmux_pushbutton_pins {
+                pinctrl-single,pins = <
+                    AM33XX_IOPAD(0x850, PIN_INPUT_PULLUP | MUX_MODE7)  // gpmc_a0.gpio1_17
+	                    >;
+	/*
+	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
+	 * https://github.com/beagleboard/beaglebone-black/blob/master/BBB_SRM.pdf
+	 *  where: Connectors / Expansion Connectors / Connector P9   (pg 67,68)
+	 *
+	 * GPIO_49 is phy pin P9_23, CPU pin V14, pin name GPIO_17, mode 0 gpmc_a1;
+	 * It's at pinmux reg offset 0x850 (0x844?), and 'mode 7' maps to
+	 * 'gpio1[17]'!  Always use mode 7 for GPIO.
+	 */
+	};
+};
+
+&{/} {
+        /* Create a (pseudo) demo on-chip peripheral (ocp) named 'pushbtn_device' */
+        pushbtn_device {
+		compatible = "lddia,pushbtn_simple";
+		label = "demo pushbtn device";
+		purpose = "launch button";
+		my_value = <42>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pushbutton_pins>;
+		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
+		/*
+		 * <gpio-root-node for gpio phy pin P9_23 (GPIO_49) is gpio1; 0=GPIO_ACTIVE_LOW>; 
+		 * 1st param: gpio bank/chip root node:
+		 *  see arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
+		 *  ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
+		 * On the BeagleBone Black, GPIO numbers are calculated as (bank * 32) + pin
+		 * So GPIO_49: 1*32+49 = 81
+		 */
+		status = "okay";
+	};
+};
