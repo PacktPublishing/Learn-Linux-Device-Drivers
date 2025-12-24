@@ -31,6 +31,7 @@
 #include <linux/platform_device.h>
 #include <linux/of.h>		// of_* APIs (OF = Open Firmware)
 #include <linux/refcount.h>
+#include <linux/of_device.h>
 #include <linux/version.h>
 
 int input_pushbtn_platdev_probe(struct platform_device *pdev);
@@ -46,6 +47,7 @@ struct pushbtn_device {
 	int irq;
 	refcount_t irqcount;
 };
+static const struct of_device_id my_of_ids[];
 
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
@@ -76,10 +78,15 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 {
 	struct pushbtn_device *pushb;
 	struct device *dev = &pdev->dev;
+	const struct of_device_id *match; // security: explicit match validation
 	const char *prop = NULL;
 	int len = 0, ret;
 
 	dev_dbg(dev, "platform input driver probe enter\n");
+
+	match =	of_match_device(my_of_ids, dev);
+	if (!match)
+		dev_err_probe(dev, -ENODEV, "error matching compatible string\n");
 
 	pushb = devm_kzalloc(&pdev->dev, sizeof(*pushb), GFP_KERNEL);
 	if (!pushb)
