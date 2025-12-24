@@ -213,7 +213,7 @@ checkpatch:
 	@echo "--- kernel code style check with checkpatch.pl ---"
 	@echo -n "\e[0m"
 	@echo
-	-$(KDIR)/scripts/checkpatch.pl --no-tree -f --max-line-length=95 *.[ch]
+	-$(KDIR)/scripts/checkpatch.pl --no-tree -f --max-line-length=80 *.[ch]
 	  # add source files as required
 
 #--- Static Analysis
