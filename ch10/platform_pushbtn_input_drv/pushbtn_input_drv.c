@@ -11,12 +11,19 @@
  * From: Ch 10 : Writing an Input Device Driver
  ****************************************************************
  * Brief Description:
- * Input (platform) driver for the PS2 Joystick Module Breakout device.
- * A very simple 'template' of sorts for an input driver for a very simple
- * platform device (it's merely a pushbutton (witha resisitor) attached to an
- * embedded board - like a Raspberry Pi or a TI Beagle Bone Black.
- * Security: care is taken to validate DT properties, check and report
- * function errors, etc.
+ * Input (platform) driver for a simple GPIO pushbutton.
+ * We wire a GPIO line from the embedded target board - here it's a TI BeagleBone
+ * Black across a 1k resistor and a simple pushbutton switch (to which 3.3V
+ * power is applied, and thus the circuit gets made when the button’s pressed
+ * down) on a breadboard.
+ * Wiring:
+ * - The board P9 (left) header’s VDD 3.3 V - physical pin 4 – for power (red
+ *   color wire), and
+ * - The board P9 header’s GPIO_49 – physical pin 23 – as the input GPIO to the
+ *   pushbutton (orange+yellow color wire).
+ *
+ * _Security_: care is taken to validate DT compatible string(s), properties,
+ * check and report function errors, etc.
  *
  * For details, please refer the book, Ch 10.
  * (c) Kaiwan N Billimoria, kaiwanTECH
@@ -102,8 +109,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 *  DT:
 	 *  ...
 	 *   pushb-gpio = <&gpio 21 0>;
-	 * ref:
-	 * https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
+	 * ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
@@ -170,10 +176,10 @@ void input_pushbtn_platdev_remove(struct platform_device *pdev)
 static const struct of_device_id my_of_ids[] = {
 	/*
 	 * DT compatible property syntax: <manufacturer,model> ...
-	 * Can have multiple pairs of <oem,model>, from most specific to most
-	 * general. This is especially important: it MUST EXACTLY match the
-	 * 'compatible' property in the DT; *even a mismatched space will cause
-	 * the match to fail* !
+	 * Can have multiple pairs of <oem,model>, from most specific to most general.
+	 * This is especially important: it MUST EXACTLY match the 'compatible'
+	 * property in the DT; *even a mismatched space will cause the match to
+	 * fail* !
 	 */
 	{ .compatible = "lddia,pushbtn_simple" },
 	{},
