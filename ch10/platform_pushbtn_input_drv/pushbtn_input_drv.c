@@ -120,10 +120,19 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	if (IS_ERR(pushb->gpio))
 		dev_err_probe(dev, PTR_ERR(pushb->gpio), "Failed at devm_gpiod_get()\n");
 
+	/* Map to IRQ line */
 	pushb->irq = gpiod_to_irq(pushb->gpio);
 	if (pushb->irq < 0)
 		dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
+
+	/* Register the IRQ via a threaded handler */
+	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
+					NULL, key_irq_handler,
+					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
+					IRQF_ONESHOT, "pushbtn-simple", pushb);
+	if (ret)
+		dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
 	/* Just fyi, let's retrieve the 'purpose' property by name */
 	if (pdev->dev.of_node) {
@@ -145,13 +154,6 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	pushb->input->phys = "gpio-keys/input0";
 	/* which events this device supports */
 	input_set_capability(pushb->input, EV_KEY, KEY_ENTER);
-
-	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
-					NULL, key_irq_handler,
-					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
-					IRQF_ONESHOT, "pushbtn-simple", pushb);
-	if (ret)
-		dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
 	/* Register input device */
 	ret = input_register_device(pushb->input);
