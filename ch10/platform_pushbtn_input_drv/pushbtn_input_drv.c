@@ -13,14 +13,19 @@
  * Brief Description:
  * Input (platform) driver for a simple GPIO pushbutton.
  * We wire a GPIO line from the embedded target board - here it's a TI BeagleBone
- * Black across a 1k resistor and a simple pushbutton switch (to which 3.3V
+ * Black - across a 1k resistor and a simple pushbutton switch (to which 3.3V
  * power is applied, and thus the circuit gets made when the button’s pressed
  * down) on a breadboard.
+ * This causes an interrupt (IRQ) to be raised! How? As we map the GPIO line to
+ * an IRQ line; please carefully refer the Device Tree Overlay source file
+ * (bbb_dtoverlay/gpio_btn_bbb.dts, and this driver code) to see how exactly
+ * this is achieved.
  * Wiring:
  * - The board P9 (left) header’s VDD 3.3 V - physical pin 4 – for power (red
  *   color wire), and
  * - The board P9 header’s GPIO_49 – physical pin 23 – as the input GPIO to the
  *   pushbutton (orange+yellow color wire).
+ * (Refer the schematic and photo in the book - Figures 10.5 and 10.6.)
  *
  * _Security_: care is taken to validate DT compatible string(s), properties,
  * check and report function errors, etc.
@@ -108,7 +113,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 *  property name before -gpio is what you use in devm_gpiod_get()
 	 *  DT:
 	 *  ...
-	 *   pushb-gpio = <&gpio 21 0>;
+	 *	pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 	 * ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
@@ -129,7 +134,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 			dev_info(dev, "DT property 'purpose' = \"%s\" (len=%d)\n",
 				prop, len);
 	} else
-		dev_warn(dev, "couldn't access DT node(s)\n");
+		dev_warn(dev, "couldn't access DT 'purpose' node\n");
 
 	/* Setup as an input device */
 	pushb->input = devm_input_allocate_device(&pdev->dev);
