@@ -27,7 +27,7 @@
  *   pushbutton (orange+yellow color wire).
  * (Refer the schematic and photo in the book - Figures 10.5 and 10.6.)
  *
- * _Security_: care is taken to validate DT compatible string(s), properties,
+ * _Secure probe_: care is taken to validate DT compatible string(s), properties,
  * check and report function errors, etc.
  *
  * For details, please refer the book, Ch 10.
@@ -60,6 +60,15 @@ struct pushbtn_device {
 	refcount_t irqcount;
 };
 static const struct of_device_id my_of_ids[];
+/*
+ * Which key or button to emit on our pushbutton press & release.
+ * You can change this to any key or button you like!
+ * (We don't do this via a module parameter as that will require
+ * a wrapper script to parse the key or btn macro as an integer
+ * and then pass it (we do this kind of thing in a later USB input
+ * driver; keep an eye out!)
+ */
+static int key_or_btn = KEY_ENTER;
 
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
@@ -77,8 +86,8 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 		refcount_read(&pushb->irqcount), state);
 
 	/* Report key event (KEY_xxx from linux/input-event-codes.h) */
-	input_report_key(pushb->input, KEY_ENTER, state);
-	//if (state == 0)		// on release
+	input_report_key(pushb->input, key_or_btn, state);
+	if (state == 0)		// sync only on key/btn on release
 		input_sync(pushb->input);
 
 	refcount_inc(&pushb->irqcount);
@@ -151,9 +160,17 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		dev_err_probe(dev, -ENOMEM, "failed at devm_input_allocate_device()\n");
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
-	pushb->input->phys = "gpio-keys/input0";
-	/* which events this device supports */
-	input_set_capability(pushb->input, EV_KEY, KEY_ENTER);
+	pushb->input->phys = "pushbtn_simple/input0";
+	/* Which events this device supports */
+	input_set_capability(pushb->input, EV_KEY, key_or_btn);
+	/*
+	 * Can also achieve setting the input dev capabilities (the above) via:
+	 *	pushb->input->evbit[0] = BIT_MASK(EV_KEY);
+	 *	pushb->input->keybit[BIT_WORD(key_or_btn)] = BIT_MASK(key_or_btn);
+	 * or like this:
+	 * 	set_bit(EV_KEY, pushb->input->evbit);
+	 * 	set_bit(key_or_btn, pushb->input->keybit);
+	 */
 
 	/* Register input device */
 	ret = input_register_device(pushb->input);
