@@ -189,8 +189,11 @@ void input_pushbtn_platdev_remove(struct platform_device *pdev)
 #endif
 {
 	struct device *dev = &pdev->dev;
+	struct pushbtn_device *pushb = platform_get_drvdata(pdev);
 
-	dev_dbg(dev, "platform driver remove\n");
+	dev_dbg(dev, "in platform driver remove method:\n"
+		"# irq or input events = %u\n", refcount_read(&pushb->irqcount));
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
 #endif
