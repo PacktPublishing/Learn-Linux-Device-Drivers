@@ -1,0 +1,26 @@
+/dts-v1/;
+/plugin/;
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		bbb_gpiokeys_pushbtn.kernel = "Tue Oct 14 22:31:00 2025";
+		  /* This should be '__TIMESTAMP__' but that's defined in kernel src only..
+		   * So have simply hardcoded it here to some random timestamp
+		   */
+	};
+};
+
+&{/} {
+	gpio-keys {
+		compatible = "gpio-keys";
+        
+		enter-button {
+			label = "PushButton Enter";
+			linux,code = <28>; /* KEY_ENTER */
+			gpios = <&gpio1 17 1>; // GPIO_ACTIVE_LOW is 1
+		};
+	};
+};
