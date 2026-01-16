@@ -1,0 +1,54 @@
+/*
+ * bbb_gpiokeys_pushbtn.dts
+ ***************************************************************
+ * This program is part of the source code released for the book
+ *  "Linux Device Drivers In Action"
+ *  (c) Author: Kaiwan N Billimoria
+ *  Publisher:  Packt
+ *  GitHub repository:
+ *  https://github.com/PacktPublishing/Learn-Linux-Device-Drivers
+ *
+ * From: Ch 10 : Writing an Input Device Driver
+ ****************************************************************
+ * Intent: to use the kernel's builtin gpio-keys driver to make our simple
+ * GPIO-based pushbutton input device work!
+ * By setting up this simple DT overlay, we tell it about pushbutton; it auto
+ * sets up the IRQ line mapped to the GPIO.
+ *
+ * NOTE: this particular DT overlay is designed for only the TI BBB.
+ * Try it out:
+ *  make ; make install
+ *  update /boot/uEnv.txt
+ *  reboot
+ *  test via sudo evtest
+ *
+ * For details, please refer the book, Ch 10.
+ * (c) Kaiwan N Billimoria, kaiwanTECH
+ * License: Dual MIT/GPL
+ */
+/dts-v1/;
+/plugin/;
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		bbb_gpiokeys_pushbtn.kernel = "Tue Oct 14 22:31:00 2025";
+		  /* This should be '__TIMESTAMP__' but that's defined in kernel src only..
+		   * So have simply hardcoded it here to some random timestamp
+		   */
+	};
+};
+
+&{/} {
+	gpio-keys {
+		compatible = "gpio-keys";
+        
+		enter-button {
+			label = "PushButton Enter";
+			linux,code = <28>;     /* KEY_ENTER */
+			gpios = <&gpio1 17 1>; /* GPIO_ACTIVE_LOW is 1 */
+		};
+	};
+};

@@ -1,33 +1,32 @@
 #!/bin/sh
 
-DTNAME=rpi4b_pushb
-build_cp_full_dtb()
-{
-echo "dtc -@ -I dts -O dtb -o ${DTNAME}.dtb ${DTNAME}.dts || exit 1"
-dtc -@ -I dts -O dtb -o ${DTNAME}.dtb ${DTNAME}.dts || exit 1
-sudo cp ${DTNAME}.dtb /boot/firmware/
-echo "built and copied"
-ls -l /boot/firmware/${DTNAME}.dtb
-}
+#DTNAME=rpi4b_pushb
+#build_cp_full_dtb()
+#{
+#echo "dtc -@ -I dts -O dtb -o ${DTNAME}.dtb ${DTNAME}.dts || exit 1"
+#dtc -@ -I dts -O dtb -o ${DTNAME}.dtb ${DTNAME}.dts || exit 1
+#sudo cp ${DTNAME}.dtb /boot/firmware/
+#echo "built and copied"
+#ls -l /boot/firmware/${DTNAME}.dtb
+#}
 
-DTO_NAME=gpio_btn_rpi4b
+DTSO_NAME=gpio_btn_rpi4b
 build_cp_dtoverlay()
 {
-echo "dtc -@ -I dts -O dtb -o ${DTO_NAME}.dtbo ${DTO_NAME}.dto || exit 1"
-dtc -@ -I dts -O dtb -o ${DTO_NAME}.dtbo ${DTO_NAME}.dto || exit 1
-ls -l ${DTO_NAME}.dtbo
-#sudo cp ${DTO_NAME}.dtbo /boot/firmware/
+echo "dtc -@ -I dts -O dtb -o ${DTSO_NAME}.dtbo ${DTSO_NAME}.dto || exit 1"
+dtc -@ -I dts -O dtb -o ${DTSO_NAME}.dtbo ${DTSO_NAME}.dto || exit 1
+ls -l ${DTSO_NAME}.dtbo
+#sudo cp ${DTSO_NAME}.dtbo /boot/firmware/
 #echo "built and copied"
-#ls -l /boot/firmware/${DTO_NAME}.dtb
+#ls -l /boot/firmware/${DTSO_NAME}.dtb
 }
 
 
 #--- 'main'
 #build_cp_full_dtb
-#exit
 
 build_cp_dtoverlay && {
-  sudo dtoverlay ${DTO_NAME}.dtbo || {
+  sudo dtoverlay ${DTSO_NAME}.dtbo || {
     echo "failed! will show last 10 lines of dmesg now"
     echo "============================================"
     sudo dmesg|tail
