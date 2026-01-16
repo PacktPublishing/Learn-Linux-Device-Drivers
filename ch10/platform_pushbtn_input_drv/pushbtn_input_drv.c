@@ -63,6 +63,7 @@ static const struct of_device_id my_of_ids[];
 /*
  * Which key or button to emit on our pushbutton press & release.
  * You can change this to any key or button you like!
+ * (KEY_xxx from include/uapi/linux/input-event-codes.h)
  * (We don't do this via a module parameter as that will require
  * a wrapper script to parse the key or btn macro as an integer
  * and then pass it (we do this kind of thing in a later USB input
@@ -85,9 +86,9 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	dev_dbg(dev, "irq:count=%u:btn-state=%d\n",
 		refcount_read(&pushb->irqcount), state);
 
-	/* Report key event (KEY_xxx from linux/input-event-codes.h) */
+	/* Report key event (KEY_xxx from include/uapi/linux/input-event-codes.h) */
 	input_report_key(pushb->input, key_or_btn, state);
-	if (state == 0)		// sync only on key/btn on release
+	if (state == 0)		// sync only on key/btn release
 		input_sync(pushb->input);
 
 	refcount_inc(&pushb->irqcount);
