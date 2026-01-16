@@ -159,6 +159,10 @@ Miscellaneous:
     - [struct sk_buff, official Linux kernel doc](https://docs.kernel.org/networking/skbuff.html)
     - [Printing sk_buff data, Oleg Kutkov, Oct 2019](https://olegkutkov.me/2019/10/17/printing-sk_buff-data/)
 
+- Realtek RTL8169 NIC Datasheets
+    - [Realtek RTL8169S-32/RTL8169S-64 Hardware datasheet PDF](http://realtek.info/pdf/rtl8169s.pdf)
+    - [Software programmer’s datasheet for the Realtek RTL8169 PDF](https://www.manualslib.com/manual/1612965/Realtek-Rtl8169.html)
+
 - [DMA: LWN kernel index of articles](https://lwn.net/Kernel/Index/#Direct_memory_access)
 
 - Memory Barriers
@@ -192,10 +196,16 @@ Miscellaneous:
 - [Wayland (protocol)](https://en.wikipedia.org/wiki/Wayland_(protocol))
 - [What is libinput?](https://wayland.freedesktop.org/libinput/doc/latest/what-is-libinput.html)
 - [Mouse Events and Input Event Interface in Linux, baeldung, Mar 2024](https://www.baeldung.com/linux/mouse-events-input-event-interface)
+- [Creating an input device driver - official kernel doc](https://docs.kernel.org/input/input-programming.html)
+- [Using a push button with Raspberry Pi GPIO, Soren, Feb 2018](https://raspberrypihq.com/use-a-push-button-with-raspberry-pi-gpio/)
+- [Definitive GPIO guide (biased to i.MX6)](https://kosagi.com/w/index.php?title=Definitive_GPIO_guide)
+- [Goodix GT911 touchscreen controller Datasheet PDF](https://www.crystalfontz.com/controllers/datasheet-viewer.php?id=464)
+- [Approaches to Keylogging perhaps? IMP NOTE: to Only be used ethically!]
+    - [See a conversation with claude.ai on this topic](https://claude.ai/share/e8d09c7e-2e38-4297-b39d-5f12117bd1fe)
+    - [kernel doc: get called back on keyboard events! Keylogger like?](https://docs.kernel.org/input/notifier.html)
 - []()
 - []()
 - []()
-
 
 ...
 
