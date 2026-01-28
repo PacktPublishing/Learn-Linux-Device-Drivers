@@ -163,12 +163,21 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 	pci_disable_device(pdev);
 }
 
-/* TODO - add comments on usage of DT here */
+/*
+ * The Device Tree (DT) is _the_ way to populate the board hardware description.
+ * However, and typically, discoverable buses and the devices on them - like PCI
+ * and USB - are not specified via the DT (as they have mechanisms for auto-discovery
+ * and enumeration; PCI devices have a DCS header with all required info that drivers
+ * can retrieve, USB has self-enumeration capabilities).
+ * Having said that, some PCI bus controllers, like the PCIe root complex itself,
+ * are described via the DT.
+ */
 static const struct pci_device_id pci_skeleton_ids[] = {
 	{PCI_DEVICE(MY_VENDOR_ID, MY_DEVICE_ID)},
 	// Add additional VID,PID pairs of devices that this driver can drive over here ...
 	{0,}
 };
+
 MODULE_DEVICE_TABLE(pci, pci_skeleton_ids);
 
 static struct pci_driver pci_skeleton_driver = {
