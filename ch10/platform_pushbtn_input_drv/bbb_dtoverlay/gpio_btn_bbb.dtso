@@ -24,6 +24,12 @@
 	};
 };
 
+/*
+ * Typically, two sections of the DT (Overlay) need configuration:
+ * - the PinMux, in order to make the required pin(s) visible on the CPU pads, and
+ * - the device itself, in order to launch and configure its device driver
+ */
+
 &am33xx_pinmux {
 	pushbutton_pins: pinmux_pushbutton_pins {
                 pinctrl-single,pins = <
@@ -52,12 +58,17 @@
 		pinctrl-0 = <&pushbutton_pins>;
 		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
 		/*
-		 * <gpio-root-node for gpio phy pin P9_23 (GPIO_49) is gpio1; 0=GPIO_ACTIVE_LOW>; 
-		 * 1st param: gpio bank/chip root node:
+		 * Explanation for the above line:
+		 * format for gpio: 
+		 *  <name>-gpios = <&GPIO-phandle GPIO-pin-number-or-offset-in-bank  consumer-flags>;
+		 *
+		 * So:
+		 *  <name>-gpios = pushbtn-gpios ; the name 'pushbtn' reflects the purpose of this GPIO for the device
+		 *   &gpio1 : the GPIO handle, ref to GPIO bank #1
+		 *   17 : the GPIO pin # or offset (phy pin P9_23 on the board P9 header)
+		 *   GPIO_ACTIVE_LOW : the GPIO flag; sets the pin specified to active low state
 		 *  see arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
 		 *  ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
-		 * On the BeagleBone Black, GPIO numbers are calculated as (bank * 32) + pin
-		 * So GPIO_49: 1*32+49 = 81
 		 */
 		status = "okay";
 	};
