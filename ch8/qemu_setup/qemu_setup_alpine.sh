@@ -51,14 +51,15 @@ eval "${QEMU_CMD}"
 #---
 # Once in the guest, do these steps:
 #  Login as root (no password)
-#  setup-alpine
-#  - Choose eth0 as your network
-#  - Use UTC or your timezone
-#  - Choose to install Alpine to disk (sda)
-#  - Use sys mode (normal installation)
-#  - Allow it to format disk
-#  - Choose to install the openssh package (optional)
-#  - Accept reboot
+#  Then run this script (within the guest):
+#   setup-alpine
+#   - Choose eth0 as your network
+#   - Use UTC or your timezone
+#   - Choose to install Alpine to disk (sda)
+#   - Use sys mode (normal installation)
+#   - Allow it to format disk
+#   - Choose to install the openssh package (optional)
+#   - Accept reboot
 #
-# Run the boot_alpine.sh script
+# Then, outside the guest, run the boot_alpine.sh script
 #---

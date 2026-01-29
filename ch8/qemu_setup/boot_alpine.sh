@@ -29,6 +29,7 @@ QEMU_CMD="qemu-system-x86_64 \
   -device virtio-serial-pci,id=vs0"
 
 # No KVM? If so, lose the -enable-kvm & -cpu host options
+# Expect it to be slow!
 lsmod | grep -E -w "kvm.intel|kvm.amd" >/dev/null || \
  QEMU_CMD="qemu-system-x86_64 \
   -m 512M \
@@ -46,10 +47,10 @@ eval "${QEMU_CMD}"
 #--- Reg the -enable-kvm option:
 # Keeping the -enable-kvm is (really) good for performance; however,
 # it only seems to work if:
-# a) your host (which could itslef be a guest!) supports KVM, and
-# b) only support one instance of a KVM-enabled guest on a given
-# system. Hence, it fails to boot if you have another hypervisor - like Oracle
-# VirtualBox that's also using kvm - running simultaneously.
+# a) Your host (which could itself be a guest!) supports KVM, and
+# b) Only support one instance of a KVM-enabled guest on a given system. Hence,
+#    it fails to boot if you have another hypervisor - like Oracle
+#    VirtualBox that's also using kvm - running simultaneously.
 #---
   
 #---
