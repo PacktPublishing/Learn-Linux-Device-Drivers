@@ -98,7 +98,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 
 	pci_set_master(pdev);
 
-	dev = kzalloc(sizeof(*dev), GFP_KERNEL);
+	dev = devm_kzalloc(&pdev->dev, sizeof(*dev), GFP_KERNEL);
 	if (!dev) {
 		err = -ENOMEM;
 		goto release_regions;
@@ -112,7 +112,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	if (!dev->bar_addr) {
 		err = PTR_ERR(dev->bar_addr);
 		dev_err_probe(&pdev->dev, err, "remap BAR%d failed\n", MEMORY_BAR);
-		goto free_dev;
+		goto release_regions;
 	}
 
 	// Interrupts: setup MSI-X
@@ -137,8 +137,8 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	pci_disable_msix(pdev);
  unmap_bar:
 	iounmap(dev->bar_addr);
- free_dev:
-	kfree(dev);
+// free_dev:
+//	kfree(dev);
  release_regions:
 	pci_release_region(pdev, MEMORY_BAR);
  disable_device:
@@ -157,7 +157,7 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 
 		if (dev->bar_addr)
 			iounmap(dev->bar_addr);
-		kfree(dev);
+//		kfree(dev);
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
