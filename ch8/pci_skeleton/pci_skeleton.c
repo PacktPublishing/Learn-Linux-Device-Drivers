@@ -28,6 +28,7 @@
 #include <linux/io.h>
 #include <linux/interrupt.h>
 #include <linux/slab.h>
+#include <linux/version.h>
 
 MODULE_AUTHOR("Kaiwan N Billimoria");
 MODULE_DESCRIPTION("a simple template for a PCIe device driver on Linux 6.12");
@@ -85,7 +86,11 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		 */
 		return dev_err_probe(&pdev->dev, err, "failed to enable the pci device\n");
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 12, 0)	// commit 7ff7509
 	err = pcim_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
+#else
+	err = pci_request_region(pdev, MEMORY_BAR, KBUILD_MODNAME);
+#endif
 	if (err) {
 		dev_err_probe(&pdev->dev, err, "request PCI region BAR%d failed\n", MEMORY_BAR);
 		goto disable_device;
@@ -154,11 +159,14 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 			iounmap(dev->bar_addr);
 		kfree(dev);
 	}
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
+	 pci_release_region(pdev, MEMORY_BAR);
+#endif
 	/*
-	 * pci_release_region(pdev, MEMORY_BAR);
-	 * This is commented out precisely as we used the *resource managed*
-	 * ver of the API - pcim_request_region(); the kernel will thus take
-	 * care of releasing it on driver removal or device detach.
+	 * On 6.12 and later, we employ the *resource managed* ver of the API -
+	 * pcim_request_region(); the kernel will thus take care of releasing
+	 * it on driver removal or device detach.
 	 */
 	pci_disable_device(pdev);
 }
