@@ -57,7 +57,7 @@ static irqreturn_t pci_skeleton_irq_handler(int irq, void *dev_id)
 	 * We still keep the line for illustrative purposes..
 	 */
 
-	pr_info("IRQ %d triggered\n", irq);
+	dev_info(&dev->pdev->dev, "IRQ %d triggered\n", irq);
 
 	// ACK or clear interrupt on the device if necessary here
 
@@ -77,7 +77,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 	int err;
 	struct pci_skeleton_dev *dev;
 
-	pr_info("probe() called for device %04x:%04x\n", pdev->vendor, pdev->device);
+	dev_info(&pdev->dev, "probe() called for device %04x:%04x\n", pdev->vendor, pdev->device);
 
 	err = pci_enable_device(pdev);
 	if (err)
@@ -130,7 +130,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		goto disable_msix;
 	}
 
-	pr_info("PCI[e] device initialized with MSI-X vector %d\n", dev->msix_entries[0].vector);
+	dev_info(&pdev->dev, "PCI[e] device initialized with MSI-X vector %d\n", dev->msix_entries[0].vector);
 	return 0;
 
  disable_msix:
@@ -150,7 +150,7 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 {
 	struct pci_skeleton_dev *dev = pci_get_drvdata(pdev);
 
-	pr_info("\n");
+	dev_info(&pdev->dev, "in remove\n");
 	if (dev) {
 		free_irq(dev->msix_entries[0].vector, dev);
 		pci_disable_msix(pdev);
