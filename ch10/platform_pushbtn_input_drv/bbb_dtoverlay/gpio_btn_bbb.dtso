@@ -1,10 +1,11 @@
 /*
  * DTBO - DT overlay
- * Inspired by - on the default Debian OS BBB rootfs :
- *  /opt/source/dtb-5.10-ti/src/arm/overlays/BB-I2C2-BME680.dts
  *
  * DT overlay for the simple pushbutton platform input driver for the TI
- * BeagleBone Black (bbb) board
+ * BeagleBone Black (bbb) board.
+ * This DTSO file MUST be placed within the target kernel source tree so that
+ * it can be built via the 'make dtbs'; necessary as we include kernel headers
+ * and employ macros like AM33XX_IOPAD(). 
  */
 /dts-v1/;
 /plugin/;
@@ -17,10 +18,7 @@
  */
 &{/chosen} {
 	overlays {
-		BBB-GPIO-PUSHBTN.kernel = "Tue Oct 14 22:31:00 2025";
-		/* This should be '__TIMESTAMP__' but that's defined in kernel src only..
-		 * So have simply hardcoded it here to some random timestamp
-		 */
+		BBB-GPIO-PUSHBTN.kernel = __TIMESTAMP__; //"Tue Oct 14 22:31:00 2025";
 	};
 };
 
@@ -63,12 +61,13 @@
 		 *  <name>-gpios = <&GPIO-phandle GPIO-pin-number-or-offset-in-bank  consumer-flags>;
 		 *
 		 * So:
-		 *  <name>-gpios = pushbtn-gpios ; the name 'pushbtn' reflects the purpose of this GPIO for the device
-		 *   &gpio1 : the GPIO handle, ref to GPIO bank #1
-		 *   17 : the GPIO pin # or offset (phy pin P9_23 on the board P9 header)
-		 *   GPIO_ACTIVE_LOW : the GPIO flag; sets the pin specified to active low state
-		 *  see arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
-		 *  ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
+		 *  <name>-gpios = pushbtn-gpios ; the name prefix 'pushbtn' reflects the
+		 *    purpose of this GPIO for the device
+		 *  &gpio1 : the GPIO handle, refers to GPIO bank #1
+		 *  17 : the GPIO pin # or offset (phy pin P9_23 on the board P9 header)
+		 *  GPIO_ACTIVE_LOW : the GPIO flag; sets the pin specified to active low state
+		 *  Ref: arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
+		 *       https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
 		 */
 		status = "okay";
 	};
