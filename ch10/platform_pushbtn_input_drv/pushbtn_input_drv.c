@@ -80,7 +80,7 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	/* Read current GPIO state */
 	state = gpiod_get_value(pushb->gpio);
 	/*
-	 * Alternately, we can also do so in a bloking manner with
+	 * Alternately, we can also do so in a blocking manner with
 	 *  state = gpiod_get_value_cansleep(pushb->gpio);
 	 */
 	dev_dbg(dev, "irq:count=%u:btn-state=%d\n",
