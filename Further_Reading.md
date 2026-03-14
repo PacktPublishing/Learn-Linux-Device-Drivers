@@ -209,7 +209,22 @@ Miscellaneous:
 
 ...
 
-## Chapter 1x, Block drivers - Further Reading
+## Chapter 11, Writing a modern Block device driver - Further Reading
+- [Cylinder-head-sector, Wikipedia](https://en.wikipedia.org/wiki/Cylinder-head-sector)
+- [Logical block addressing, Wikipedia](https://en.wikipedia.org/wiki/Logical_block_addressing)
+- [Managed Flash Background Operations Series; Part 5: Understanding Logical Block Address to Physical Block Address Translation in NAND Flash Memory](https://americas.kioxia.com/content/dam/kioxia/en-us/business/memory/mlc-nand/asset/KIOXIA_Managed_Flash_BOS_P5_Understanding_L2P_Block_Address_Translation_Tech_Brief.pdf)
+
+- [LINUX SYSTEM CALLS UNDER THE HOOD, CROSSING THE BORDER BETWEEN USERLAND AND THE KERNEL, J Sobcazk, Aug 2021](https://juliensobczak.com/inspect/2021/08/10/linux-system-calls-under-the-hood/)
+- [Block Device Drivers](https://linux-kernel-labs.github.io/refs/heads/master/labs/block_device_drivers.html)
+- [Direct Access for files (DAX), official kernel doc](https://docs.kernel.org/filesystems/dax.html)
+
+- [How to Use fio for I/O Performance Benchmarking on Ubuntu, @nawazdhandala, March 2026](https://oneuptime.com/blog/post/2026-03-02-use-fio-io-performance-benchmarking-ubuntu/view)
+- [The official NVMe website](https://nvmexpress.org/)
+- []()
+- []()
+- []()
+- []()
+
 - [Linux Multi-Queue Block IO Queueing Mechanism (blk-mq) Details, Werner Fischer, Thomas Krenn, 2015](https://www.thomas-krenn.com/en/wiki/Linux_Multi-Queue_Block_IO_Queueing_Mechanism_(blk-mq)_Details)
 
 [End Doc]
