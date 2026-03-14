@@ -48,7 +48,8 @@ struct pci_skeleton_dev {
 	struct msix_entry msix_entries[NUM_MSIX_VECTORS];
 };
 
-// Interrupt handler
+// Interrupt handler; hardirq - runs with ALL interrupts disabled on local core
+// and this IRQ masked on all other cores! Be fast!
 static irqreturn_t pci_skeleton_irq_handler(int irq, void *dev_id)
 {
 	const struct pci_skeleton_dev *dev = dev_id;
@@ -114,6 +115,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		dev_err_probe(&pdev->dev, err, "remap BAR%d failed\n", MEMORY_BAR);
 		goto release_regions;
 	}
+	// TODO : use the pcim_iomap()
 
 	// Interrupts: setup MSI-X
 	dev->msix_entries[0].entry = 0;
@@ -123,6 +125,7 @@ static int pci_skeleton_probe(struct pci_dev *pdev, const struct pci_device_id *
 		goto unmap_bar;
 	}
 
+	// prefer we use the 'managed' variant: devm_request_[threaded_]irq()
 	err = request_irq(dev->msix_entries[0].vector, pci_skeleton_irq_handler,
 			  0, KBUILD_MODNAME, dev);
 	if (err) {
@@ -151,7 +154,7 @@ static void pci_skeleton_remove(struct pci_dev *pdev)
 	struct pci_skeleton_dev *dev = pci_get_drvdata(pdev);
 
 	dev_info(&pdev->dev, "in remove\n");
-	if (dev) {
+ 	if (dev) {
 		free_irq(dev->msix_entries[0].vector, dev);
 		pci_disable_msix(pdev);
 
