@@ -162,7 +162,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
 	pushb->input->phys = "pushbtn_simple/input0";
-	/* Which events this device supports */
+	/* Which input events this device supports */
 	input_set_capability(pushb->input, EV_KEY, key_or_btn);
 	/*
 	 * Can also achieve setting the input dev capabilities (the above) via:
