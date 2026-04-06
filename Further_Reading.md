@@ -148,6 +148,8 @@ Miscellaneous:
     - [Mastering Notifier Chains and Learn how Reboot Notifiers in the Linux Kernel is implemented, Faayiz M, Mar 2024](https://www.linkedin.com/pulse/mastering-notifier-chains-learn-how-reboot-notifiers-linux-faayiz-m-gc5nc/)
     - [Notifier Chains, Clemson University](https://people.computing.clemson.edu/~westall/853/notes/notifier.pdf)
 
+- [Linux kernel design patterns - part 1, Neil Brown, June 2009, LWN (this is the first of a 3-part series)](https://lwn.net/Articles/336224/)
+
 - [ChatGPT 4: Qs> When i send or receive network packets (or just ping) how can i see which network interface is actually used to perform the tx or rx?](https://chatgpt.com/share/684bc0fd-0a94-8011-8149-e1153a5af398)
 -  [Netconsole: official kernel doc, v6.12](https://www.kernel.org/doc/html/v6.12/networking/netconsole.html#netconsole)
 - [Monitoring and Tuning the Linux Networking Stack: Sending Data, Joe Damato, packagecloud, Feb 2017](https://blog.packagecloud.io/monitoring-tuning-linux-networking-stack-sending-data/)
