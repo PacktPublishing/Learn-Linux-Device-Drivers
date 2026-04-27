@@ -3,7 +3,7 @@
  * Simple Block Device Linux kernel module for modern >= 5.x Linux kernels.
  * Uses the blk-mq framework and supports both request-based and bio-based schemes.
  * Contains a minimum of code to create the most primitive block device.
- * 
+ *
  * Original code credit: Sergei Shtepa:
  * https://github.com/CodeImp/sblkdev  \[1\]
  *
@@ -11,6 +11,8 @@
  * (Unfortunately, the original article is no longer available.)
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+
+// TODO : use resource managed devm_* APIs for better error handling and cleanup
 
 #include <linux/module.h>
 #include "device.h"
@@ -60,9 +62,12 @@
 static int sblkdev_major;
 static LIST_HEAD(sblkdev_device_list);
 static char *sblkdev_catalog = "sblkdev1,4096;sblkdev2,8192";
+module_param_named(catalog, sblkdev_catalog, charp, 0644);
+MODULE_PARM_DESC(catalog, "New block devices catalog in format '<name>,<capacity sectors>;...'");
 
 /*
  * sblkdev_init() - Entry point 'init'.
+ * --- Block driver Init step 0
  *
  * Executed when the module is loaded. Parses the catalog parameter and
  * creates block devices.
@@ -157,8 +162,7 @@ static void __exit sblkdev_exit(void)
 module_init(sblkdev_init);
 module_exit(sblkdev_exit);
 
-module_param_named(catalog, sblkdev_catalog, charp, 0644);
-MODULE_PARM_DESC(catalog, "New block devices catalog in format '<name>,<capacity sectors>;...'");
-
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Sergei Shtepa");
+MODULE_AUTHOR("Sergei Shtepa, Kaiwan NB");
+MODULE_DESCRIPTION(
+	"Simple block driver Linux kernel module for modern >= 5.x blk-mq Linux kernels");
