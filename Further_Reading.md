@@ -222,8 +222,16 @@ Miscellaneous:
 
 - [How to Use fio for I/O Performance Benchmarking on Ubuntu, @nawazdhandala, March 2026](https://oneuptime.com/blog/post/2026-03-02-use-fio-io-performance-benchmarking-ubuntu/view)
 - [The official NVMe website](https://nvmexpress.org/)
-- []()
-- []()
+- [Device Mapper (dm), official Linux kernel doc (links to dm-foo)](https://docs.kernel.org/admin-guide/device-mapper/index.html)
+- RAID data storage tech
+    - [RAID on Wikipedia](https://en.wikipedia.org/wiki/RAID)
+    - [dm-raid, Linux kernel official doc](https://docs.kernel.org/admin-guide/device-mapper/dm-raid.html)
+    - [RAID arrays, Linux kernel official doc](https://docs.kernel.org/admin-guide/md.html)
+- DM Multipath
+    - [Linux DM Multipath on Wikipedia](https://en.wikipedia.org/wiki/Linux_DM_Multipath)
+    - [Introduction to device mapper multipathing (“multipath”), Ubuntu Server docs](https://ubuntu.com/server/docs/explanation/intro-to/multipath/)
+    - [Device Mapper Multipath, an Introduction, Oracle blog, Aug 2024](https://blogs.oracle.com/linux/device-mapper-multipath-an-introduction)
+    - [Configuring and managing Device Mapper Multipath, RedHat RHEL7](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html-single/dm_multipath/index)
 - []()
 - []()
 
