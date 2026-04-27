@@ -21,7 +21,7 @@ run_test() {
     # Change --ioengine from 'libaio' to 'io_uring'
     result=$(fio \
         --name="$name" \
-        --ioengine=libaio \
+        --ioengine=io_uring \
         --rw="$rw" \
         --bs="$bs" \
         --direct=1 \
@@ -33,6 +33,7 @@ run_test() {
         --time_based \
         --output-format=json \
         --group_reporting 2>/dev/null)
+       # --ioengine=libaio
 
     read_bw=$(echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['jobs'][0]['read']['bw_bytes']//1024//1024)" 2>/dev/null)
     read_iops=$(echo "$result" | python3 -c "import sys,json; d=json.load(sys.stdin); print(int(d['jobs'][0]['read']['iops']))" 2>/dev/null)
