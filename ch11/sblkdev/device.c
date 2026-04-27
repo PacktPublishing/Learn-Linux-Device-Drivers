@@ -10,6 +10,8 @@
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 
+// TODO : use resource managed devm_* APIs for better error handling and cleanup
+
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
 	int ret = BLK_STS_OK; // 0
@@ -62,10 +64,9 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq;
 
+	cant_sleep(); /* cannot use any locks that make the thread sleep */
 	pr_debug("new request from block IO layer queued\n");
 	PRINT_CTX();
-	//might_sleep();
-	cant_sleep(); /* cannot use any locks that make the thread sleep */
 
 	blk_mq_start_request(rq);
 
@@ -133,7 +134,6 @@ void sblkdev_submit_bio(struct bio *bio)
 
 	PRINT_CTX();
 	might_sleep();
-	//cant_sleep(); /* cannot use any locks that make the thread sleep */
 
 	process_bio(dev, bio);
 
@@ -146,13 +146,13 @@ void sblkdev_submit_bio(struct bio *bio)
 
 #endif /* CONFIG_SBLKDEV_REQUESTS_BASED */
 
-#if KERNEL_VERSION(6, 5, 0) >= LINUX_VERSION_CODE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
 static int sblkdev_open(struct gendisk *disk, fmode_t mode)
 #else
 static int sblkdev_open(struct block_device *bdev, fmode_t mode)
 #endif
 {
-#if KERNEL_VERSION(6, 5, 0) >= LINUX_VERSION_CODE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
 	struct sblkdev_device *dev = disk->private_data;
 #else
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
@@ -169,7 +169,7 @@ static int sblkdev_open(struct block_device *bdev, fmode_t mode)
 	return 0;
 }
 
-#if KERNEL_VERSION(6, 5, 0) >= LINUX_VERSION_CODE
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
 static void sblkdev_release(struct gendisk *disk)
 #else
 static void sblkdev_release(struct gendisk *disk, fmode_t mode)
@@ -243,6 +243,7 @@ static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode, unsigne
 }
 #endif
 
+// Device management (or control) plane ops
 static const struct block_device_operations fops = {
 	.owner = THIS_MODULE,
 	.open = sblkdev_open,
@@ -252,7 +253,7 @@ static const struct block_device_operations fops = {
 	.compat_ioctl = sblkdev_compat_ioctl,
 #endif
 #ifndef CONFIG_SBLKDEV_REQUESTS_BASED
-	.submit_bio = sblkdev_submit_bio,
+	.submit_bio = sblkdev_submit_bio,	// only for a BIO-based driver
 #endif
 };
 
@@ -301,6 +302,13 @@ static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 }
 #endif
 
+/*
+ * Our current default setup's like this (while compiling we see):
+ * ‘#pragma message: The blk_mq_alloc_disk() function was found.’
+ * So: HAVE_BLK_MQ_ALLOC_DISK is defined, hence the func below is compiled out..
+ * (Of course this can change if we compile on an older kernel, e.g. 5.10,
+ * where blk_mq_alloc_disk() isn't available)
+ */
 #ifndef HAVE_BLK_MQ_ALLOC_DISK
 static inline struct gendisk *my_blk_mq_alloc_disk(struct blk_mq_tag_set *set, struct queue_limits *lim,
 						void *queuedata)
@@ -308,6 +316,7 @@ static inline struct gendisk *my_blk_mq_alloc_disk(struct blk_mq_tag_set *set, s
 	struct gendisk *disk;
 	struct request_queue *queue;
 
+	pr_debug("in my_blk_mq_alloc_disk()\n");
 	queue = blk_mq_init_queue(set);
 	if (IS_ERR(queue)) {
 		pr_err("Failed to allocate queue\n");
@@ -350,6 +359,7 @@ static inline struct gendisk *blk_alloc_disk(int node)
 
 /*
  * sblkdev_add() - Add simple block device
+ * This function poses as an innocent but is really pretty large and important!
  */
 struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 				  sector_t capacity)
@@ -358,6 +368,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	int ret = 0;
 	struct gendisk *disk;
 
+	//--- Block driver Init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
 
 	dev = kzalloc(sizeof(struct sblkdev_device), GFP_KERNEL);
@@ -374,8 +385,11 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		goto fail_kfree;
 	}
 
+	/*--- Block driver Init step 2 - tag set init; a critical part of block
+	 * driver initialization when using the request-based approach.
+	 * >= 6.8: this seems to be the default approach
+	 */
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
-	// >= 6.8: this seems to be the default approach
 	pr_info("Going via explicit (longer) request-based approach\n");
 	ret = init_tag_set(&dev->tag_set, dev);
 	if (ret) {
@@ -383,9 +397,11 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		goto fail_kvfree;
 	}
 
-	/* >=5.14: blk_mq_alloc_disk() is a kernel macro, a wrapper over
-	 * blk_mq_alloc_queue() and __alloc_disk_node().
-	 * If < 5.14 we have our own implementation of this func...
+	/*--- Block driver Init step 3 - allocate the disk
+	 * >=5.14: blk_mq_alloc_disk() is a kernel macro, a tiny wrapper over
+	 * __blk_mq_alloc_disk().
+	 * If < 5.14 we have our own implementation of this func,
+	 *  my_blk_mq_alloc_disk()
 	 */
 	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
 	if (unlikely(!disk)) {
@@ -403,7 +419,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	pr_info("Going via simpler blk_alloc_queue() and __alloc_disk_node() method\n");
 	/* blk_alloc_disk() is actually a simpler way - wrapper - to get
 	 * the same behavior as above via init_tag_set(), blk_mq_init_queue() &
-	 * alloc_disk() (via our blk_mq_alloc_disk() function)
+	 * alloc_disk()
 	 */
 	disk = blk_alloc_disk(NUMA_NO_NODE);
 	if (!disk) {
@@ -412,27 +428,34 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		goto fail_kvfree;
 	}
 #endif
-	/* Ok, we have the 'disk'; init it ... */
+
+	/*--- Block driver Init step 4 - initialize the disk and make it live ---*/
+	// Ok, we now have the 'disk'...
 	dev->disk = disk;
 
 	/* only one partition */
 #ifdef GENHD_FL_NO_PART_SCAN
 	disk->flags |= GENHD_FL_NO_PART_SCAN;
 #else
+	/* This is the portion that runs by default;
+	 * GENHD_FL_NO_PART_SCAN implies no partition support and users can't add
+	 * partitions manually
+	 */
 	disk->flags |= GENHD_FL_NO_PART;
+	pr_debug("GENHD_FL_NO_PART flag set\n");
 #endif
 
-	/* removable device */
-	/* disk->flags |= GENHD_FL_REMOVABLE; */
-
+	/* If removable device:
+	 * disk->flags |= GENHD_FL_REMOVABLE;
+	 */
 	disk->major = major;
 	disk->first_minor = minor;
 	disk->minors = 1;
 
-	disk->fops = &fops;	// blk device ops
+	disk->fops = &fops;	// device management (or control) plane ops for the disk
 	disk->private_data = dev;
 
-	sprintf(disk->disk_name, name);
+	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
 	set_capacity(disk, dev->capacity);
 
 #ifdef CONFIG_SBLKDEV_BLOCK_SIZE
@@ -447,12 +470,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	queue_logical_block_size(disk->queue);
 	//blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);   // not on 6.14?
 #endif
-	queue_max_hw_sectors(disk->queue);
-	//blk_queue_max_hw_sectors(disk->queue, BLK_SAFE_MAX_SECTORS);   // not on 6.14?
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
-
-	// Add the disk; makes it 'live'
 #ifdef HAVE_ADD_DISK_RESULT
 	ret = add_disk(disk);
 	if (ret) {
@@ -462,7 +481,10 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 #else
 	add_disk(disk);
 #endif
-
+	/*
+	 * The disk's now live! It can be seen and used by userspace, via 'lsblk'
+	 * or 'cat /proc/partitions' and can be used for IO.
+	 */
 	pr_info("Simple block device [%d:%d] was added\n", major, minor);
 
 	return dev;
