@@ -18,18 +18,19 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	struct sblkdev_device *dev = rq->q->queuedata;
+	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 	loff_t dev_size = (dev->capacity << SECTOR_SHIFT);
 
 	/*
 	 * The request contains a list of memory pages (bio_vec).
 	 * In a 'real' driver you must map these to your device's DMA.
-	 * Once ready, submit it to Hardware by writing the command to the
-	 * device's "Doorbell" register or ring buffer.
-	 * Here, we do iterate over all the bio's - and each bio_vec within
-	 * them - calculating the src or dest address and the length; we then
-	 * perform a simple memcpy() (in lieu of DMA) to perform the actual IO,
-	 * the read or write.
+	 * Once ready, submit it to hardware by writing the command to the
+	 * device's 'doorbell' register or ring buffer.
+	 * Here, we iterate over all the BIO's for this in-flight I/O request
+	 * - and each bio_vec within them - calculating the src or dest address
+	 * and the length; we then perform a simple memcpy() (in lieu of DMA)
+	 * to perform the actual IO, the read or write.
 	 */
 	PRINT_CTX();
 	rq_for_each_segment(bvec, rq, iter) {
@@ -53,10 +54,15 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 
 /*
  * IMPORTANT:
- * This is where any new request from block IO layer is handled; this is the
- * request queuing logic!
+ * This is where any new request from the block IO layer - in effect, from
+ * blk-mq - is handled; this is the driver 'request function'!
  * Akin to the "main() function of your driver's data path". It is called when
- * the block layer has a request ready for hardware.
+ * the block layer (blk-mq) has a request ready for hardware.
+ *
+ * It runs in the context that the I/O request was issued in: typically process
+ * context - that of the userspace process/thread that invoked the I/O
+ * (Can run in softirq context as well. Our PRINT_CTX() macro reveals the
+ * precise context.) Regardless, no sleeping/blocking's allowed here...
  */
 static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {
@@ -81,7 +87,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 }
 
 static struct blk_mq_ops mq_ops = {
-	.queue_rq = sblkdev_queue_rq,
+	.queue_rq = sblkdev_queue_rq, // our 'request function'!
 };
 
 #else  /* CONFIG_SBLKDEV_REQUESTS_BASED */
@@ -368,7 +374,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	int ret = 0;
 	struct gendisk *disk;
 
-	//--- Block driver Init step 1
+	//--- Block driver init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
 
 	dev = kzalloc(sizeof(struct sblkdev_device), GFP_KERNEL);
@@ -385,7 +391,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		goto fail_kfree;
 	}
 
-	/*--- Block driver Init step 2 - tag set init; a critical part of block
+	/*--- Block driver init step 2 - tag set init; a critical part of block
 	 * driver initialization when using the request-based approach.
 	 * >= 6.8: this seems to be the default approach
 	 */
@@ -397,7 +403,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		goto fail_kvfree;
 	}
 
-	/*--- Block driver Init step 3 - allocate the disk
+	/*--- Block driver init step 3 - allocate the disk
 	 * >=5.14: blk_mq_alloc_disk() is a kernel macro, a tiny wrapper over
 	 * __blk_mq_alloc_disk().
 	 * If < 5.14 we have our own implementation of this func,
@@ -429,7 +435,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	}
 #endif
 
-	/*--- Block driver Init step 4 - initialize the disk and make it live ---*/
+	/*--- Block driver init step 4 - initialize the disk and make it live ---*/
 	// Ok, we now have the 'disk'...
 	dev->disk = disk;
 
