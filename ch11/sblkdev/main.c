@@ -30,6 +30,10 @@
 #pragma message("Specific block size selected.")
 #endif
 
+#ifdef SBLKDEV_SHOW_ADDN_DTL
+#pragma message("Show additional details in request function selected.")
+#endif
+
 #ifdef HAVE_BI_BDEV
 #pragma message("The struct bio have pointer to struct block_device.")
 #endif

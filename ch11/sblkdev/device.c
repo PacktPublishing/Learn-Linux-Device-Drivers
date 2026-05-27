@@ -17,10 +17,11 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	int ret = BLK_STS_OK; // 0
 	struct bio_vec bvec;
 	struct req_iterator iter;
-	struct sblkdev_device *dev = rq->q->queuedata;
 	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 	loff_t dev_size = (dev->capacity << SECTOR_SHIFT);
+
+	cant_sleep(); /* Cannot do anything that's blocking! */
 
 	/*
 	 * The request contains a list of memory pages (bio_vec).
@@ -32,7 +33,6 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	 * and the length; we then perform a simple memcpy() (in lieu of DMA)
 	 * to perform the actual IO, the read or write.
 	 */
-	PRINT_CTX();
 	rq_for_each_segment(bvec, rq, iter) {
 		unsigned long len = bvec.bv_len;
 		void *buf = page_address(bvec.bv_page) + bvec.bv_offset;
@@ -68,20 +68,42 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 {
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
-	struct request *rq = bd->rq;
+	struct request *rq = bd->rq; // the in-flight I/O request
 
-	cant_sleep(); /* cannot use any locks that make the thread sleep */
-	pr_debug("new request from block IO layer queued\n");
+	cant_sleep(); /* Cannot do anything that's blocking! */
 	PRINT_CTX();
+	pr_debug("[tag %d] %s request from blk-mq\n",
+		 rq->tag, rq_data_dir(rq)?"write":"read");
+#ifdef SBLKDEV_SHOW_ADDN_DTL
+	pr_debug("ADDN_DTL:\n"
+		"# SW Qs = %d\n"  // ; cpu=%u, curr cpu=%u\n"
+		"HCTX: cpumask = %*pbl ;"
+		" queue_depth (nr_tags) = %u\n"
+		"last request? %s\n",
+		hctx->nr_ctx,
+		cpumask_pr_args(hctx->cpumask),
+		hctx->tags->nr_tags,
+		bd->last?"yes":"no");
+	pr_debug("hctx type: ");
+	if (hctx->type == HCTX_TYPE_DEFAULT)
+		pr_cont("DEFAULT\n");
+	else if (hctx->type == HCTX_TYPE_READ)
+		pr_cont("READ\n");
+	else if (hctx->type == HCTX_TYPE_POLL)
+		pr_cont("POLL\n");
+#endif
 
 	blk_mq_start_request(rq);
 
 	if (process_request(rq, &nr_bytes))
 		status = BLK_STS_IOERR;
 
-	pr_debug("request %llu:%d (pos:#bytes) processed\n", blk_rq_pos(rq), nr_bytes);
-
 	blk_mq_end_request(rq, status);
+
+	pr_debug("[tag %d]  processed: at %llu:%d (pos:#bytes) (stat=%d)\n",
+		rq->tag, blk_rq_pos(rq), nr_bytes, status);
+	if (status)
+		pr_warn("request failed!\n");
 
 	return status;
 }
@@ -242,7 +264,8 @@ static int sblkdev_ioctl(struct block_device *bdev, fmode_t mode, unsigned int c
 }
 
 #ifdef CONFIG_COMPAT
-static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
+static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode,
+				unsigned int cmd, unsigned long arg)
 {
 	// CONFIG_COMPAT is to allow running 32-bit userspace code on a 64-bit kernel
 	return -ENOTTY; // not supported

@@ -9,7 +9,10 @@ ccflags-y += "-D CONFIG_SBLKDEV_REQUESTS_BASED"
 # Allow to set specific size of the block
 # ccflags-y += "-D CONFIG_SBLKDEV_BLOCK_SIZE=4096"
 
-# Allows you to build a module in a range of kernel versions [5.10, 6.0].
+# Allow to set specific size of the block
+ccflags-y += "-D SBLKDEV_SHOW_ADDN_DTL"
+
+# Allows you to build a module in a range of kernel versions [5.10, 6.18.x].
 ccflags-y += $(shell 							\
 	grep -qw "*bi_bdev;" $(srctree)/include/linux/blk_types.h &&		\
 		echo -D HAVE_BI_BDEV)
