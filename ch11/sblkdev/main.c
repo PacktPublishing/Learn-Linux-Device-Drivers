@@ -105,6 +105,11 @@ static int __init sblkdev_init(void)
 	}
 	strscpy(catalog, sblkdev_catalog, length + 1);
 
+	/*
+	 * The 'catalog' module param / variable is of the form:
+	 *  "sblkdev1,4096;sblkdev2,8192"
+	 * Parse it
+	 */
 	next_token = catalog;
 	while ((token = strsep(&next_token, ";"))) {
 		struct sblkdev_device *dev;
@@ -123,6 +128,7 @@ static int __init sblkdev_init(void)
 		if (ret)
 			break;
 
+		// Setup the new disk
 		dev = sblkdev_add(sblkdev_major, inx, name, capacity_value);
 		if (IS_ERR(dev)) {
 			ret = PTR_ERR(dev);
@@ -161,6 +167,7 @@ static void __exit sblkdev_exit(void)
 
 	if (sblkdev_major > 0)
 		unregister_blkdev(sblkdev_major, KBUILD_MODNAME);
+	pr_info("unregistered\n");
 }
 
 module_init(sblkdev_init);
@@ -169,4 +176,4 @@ module_exit(sblkdev_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sergei Shtepa, Kaiwan NB");
 MODULE_DESCRIPTION(
-	"Simple block driver Linux kernel module for modern >= 5.x blk-mq Linux kernels");
+	"Simple request-based block driver Linux kernel module for modern >= 5.x blk-mq Linux kernels");
