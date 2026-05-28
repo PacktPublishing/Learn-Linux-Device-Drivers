@@ -69,28 +69,31 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq; // the in-flight I/O request
+	struct device *dev;
 
 	cant_sleep(); /* Cannot do anything that's blocking! */
 	PRINT_CTX();
-	pr_debug("[tag %d] %s request from blk-mq\n",
+
+	dev = disk_to_dev(rq->q->disk);
+	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
 		 rq->tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
-	pr_debug("ADDN_DTL:\n"
+	dev_dbg(dev, "ADDN_DTL:\n"
 		"# SW Qs = %d\n"  // ; cpu=%u, curr cpu=%u\n"
 		"HCTX: cpumask = %*pbl ;"
-		" queue_depth (nr_tags) = %u\n"
+		" queue depth (nr_tags) = %u\n"
 		"last request? %s\n",
 		hctx->nr_ctx,
 		cpumask_pr_args(hctx->cpumask),
 		hctx->tags->nr_tags,
 		bd->last?"yes":"no");
-	pr_debug("hctx type: ");
+	dev_dbg(dev, "hctx type: ");
 	if (hctx->type == HCTX_TYPE_DEFAULT)
-		pr_cont("DEFAULT\n");
+		dev_dbg(dev, " DEFAULT\n");
 	else if (hctx->type == HCTX_TYPE_READ)
-		pr_cont("READ\n");
+		dev_dbg(dev, " READ\n");
 	else if (hctx->type == HCTX_TYPE_POLL)
-		pr_cont("POLL\n");
+		dev_dbg(dev, " POLL\n");
 #endif
 
 	blk_mq_start_request(rq);
@@ -100,10 +103,10 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 
 	blk_mq_end_request(rq, status);
 
-	pr_debug("[tag %d]  processed: at %llu:%d (pos:#bytes) (stat=%d)\n",
+	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (pos:#bytes) (stat=%d)\n",
 		rq->tag, blk_rq_pos(rq), nr_bytes, status);
 	if (status)
-		pr_warn("request failed!\n");
+		dev_warn(dev, "request failed!\n");
 
 	return status;
 }
@@ -419,7 +422,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	 * >= 6.8: this seems to be the default approach
 	 */
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
-	pr_info("Going via explicit (longer) request-based approach\n");
+	pr_info("Going via explicit request-based approach\n");
 	ret = init_tag_set(&dev->tag_set, dev);
 	if (ret) {
 		pr_err("Failed to allocate tag set\n");
@@ -443,9 +446,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 		pr_err("Failed to allocate disk (2)\n");
 		goto fail_free_tag_set;
 	}
-
 #else
-	pr_info("Going via simpler blk_alloc_queue() and __alloc_disk_node() method\n");
+	pr_info("Going via simpler bio-based approach\n");
 	/* blk_alloc_disk() is actually a simpler way - wrapper - to get
 	 * the same behavior as above via init_tag_set(), blk_mq_init_queue() &
 	 * alloc_disk()
@@ -461,6 +463,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	/*--- Block driver init step 4 - initialize the disk and make it live ---*/
 	// Ok, we now have the 'disk'...
 	dev->disk = disk;
+	struct device *dvc = disk_to_dev(disk);
 
 	/* only one partition */
 #ifdef GENHD_FL_NO_PART_SCAN
@@ -471,7 +474,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	 * partitions manually
 	 */
 	disk->flags |= GENHD_FL_NO_PART;
-	pr_debug("GENHD_FL_NO_PART flag set\n");
+	dev_dbg(dvc, "GENHD_FL_NO_PART flag set\n");
 #endif
 
 	/* If removable device:
@@ -504,7 +507,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 #ifdef HAVE_ADD_DISK_RESULT
 	ret = add_disk(disk);
 	if (ret) {
-		pr_err("Failed to add disk '%s'\n", disk->disk_name);
+		dev_err(dvc, "Failed to add disk '%s'\n", disk->disk_name);
 		goto fail_put_disk;
 	}
 #else
@@ -514,7 +517,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	 * The disk's now live! It can be seen and used by userspace, via 'lsblk'
 	 * or 'cat /proc/partitions' and can be used for IO.
 	 */
-	pr_info("Simple block device [%d:%d] was added\n", major, minor);
+	dev_info(dvc, "Simple block device [%d:%d] was added\n", major, minor);
 
 	return dev;
 
