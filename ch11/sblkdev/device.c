@@ -14,7 +14,7 @@
 
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
-	int ret = BLK_STS_OK; // 0
+	int ret = BLK_STS_OK;
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
@@ -76,7 +76,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 		 rq->tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
 	pr_debug("ADDN_DTL:\n"
-		"# SW Qs = %d\n"  // ; cpu=%u, curr cpu=%u\n"
+		"# SW Qs = %d\n"
 		"HCTX: cpumask = %*pbl ;"
 		" queue_depth (nr_tags) = %u\n"
 		"last request? %s\n",
@@ -315,7 +315,7 @@ void sblkdev_remove(struct sblkdev_device *dev)
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 {
-	set->ops = &mq_ops;	// block driver behavior
+	set->ops = &mq_ops;	// block driver 'request function' setup
 	set->nr_hw_queues = 1;
 	set->nr_maps = 1;
 	set->queue_depth = 128;
