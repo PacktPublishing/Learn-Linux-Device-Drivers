@@ -9,7 +9,7 @@ ccflags-y += "-D CONFIG_SBLKDEV_REQUESTS_BASED"
 # Allow to set specific size of the block
 # ccflags-y += "-D CONFIG_SBLKDEV_BLOCK_SIZE=4096"
 
-# Allow to set specific size of the block
+# Enable showing additional details in the request function
 ccflags-y += "-D SBLKDEV_SHOW_ADDN_DTL"
 
 # Allows you to build a module in a range of kernel versions [5.10, 6.18.x].
