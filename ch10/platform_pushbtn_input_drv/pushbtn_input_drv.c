@@ -107,7 +107,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 
 	match =	of_match_device(my_of_ids, dev);
 	if (!match)
-		dev_err_probe(dev, -ENODEV, "error matching compatible string\n");
+		return dev_err_probe(dev, -ENODEV, "error matching compatible string\n");
 
 	pushb = devm_kzalloc(&pdev->dev, sizeof(*pushb), GFP_KERNEL);
 	if (!pushb)
@@ -127,12 +127,12 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
-		dev_err_probe(dev, PTR_ERR(pushb->gpio), "Failed at devm_gpiod_get()\n");
+		return dev_err_probe(dev, PTR_ERR(pushb->gpio), "Failed at devm_gpiod_get()\n");
 
 	/* Map to IRQ line */
 	pushb->irq = gpiod_to_irq(pushb->gpio);
 	if (pushb->irq < 0)
-		dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
+		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 
 	/* Register the IRQ via a threaded handler */
@@ -141,7 +141,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
 					IRQF_ONESHOT, "pushbtn-simple", pushb);
 	if (ret)
-		dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
+		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
 	/* Just fyi, let's retrieve the 'purpose' property by name */
 	if (pdev->dev.of_node) {
@@ -157,7 +157,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	/* Setup as an input device */
 	pushb->input = devm_input_allocate_device(&pdev->dev);
 	if (!pushb->input)
-		dev_err_probe(dev, -ENOMEM, "failed at devm_input_allocate_device()\n");
+		return dev_err_probe(dev, -ENOMEM, "failed at devm_input_allocate_device()\n");
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
 	pushb->input->phys = "pushbtn_simple/input0";
@@ -175,7 +175,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	/* Register input device */
 	ret = input_register_device(pushb->input);
 	if (ret)
-		dev_err_probe(dev, ret, "failed at input_register_device()\n");
+		return dev_err_probe(dev, ret, "failed at input_register_device()\n");
 	platform_set_drvdata(pdev, pushb);
 	atomic_set(&pushb->irqcount, 0);
 
