@@ -53,7 +53,7 @@
 
 #ifdef USE_FTRACE_BUFFER
 #define DBGPRINT(string, args...)                                       \
-	trace_printk(string, ##args);
+	trace_printk(string, ##args)
 #else
 #define DBGPRINT(string, args...) do {                                  \
 	int USE_RATELIMITING = 1;                                           \
@@ -69,23 +69,15 @@
 /*------------------------ MSG, QP ------------------------------------*/
 #ifdef DEBUG
 #ifdef __KERNEL__
-#define MSG(string, args...) do {                                       \
-	DBGPRINT("%s:%d : " string, __func__, __LINE__, ##args);            \
-} while (0)
+#define MSG(string, args...) DBGPRINT("%s:%d : " string, __func__, __LINE__, ##args)
 #else
-#define MSG(string, args...) do {                                       \
-	fprintf(stderr, "%s:%d : " string, __func__, __LINE__, ##args);     \
-} while (0)
+#define MSG(string, args...) fprintf(stderr, "%s:%d : " string, __func__, __LINE__, ##args)
 #endif
 
 #ifdef __KERNEL__
-#define MSG_SHORT(string, args...) do {                                 \
-	DBGPRINT(string, ##args);                                           \
-} while (0)
+#define MSG_SHORT(string, args...) DBGPRINT(string, ##args)
 #else
-#define MSG_SHORT(string, args...) do {                                 \
-	fprintf(stderr, string, ##args);                                    \
-} while (0)
+#define MSG_SHORT(string, args...) fprintf(stderr, string, ##args)
 #endif
 
 // QP = Quick Print
@@ -106,9 +98,7 @@
 #endif
 
 #ifdef __KERNEL__
-#define HexDump(from_addr, len) do {                                    \
-	print_hex_dump_bytes(" ", DUMP_PREFIX_ADDRESS, from_addr, len);     \
-} while (0)
+#define HexDump(from_addr, len) print_hex_dump_bytes(" ", DUMP_PREFIX_ADDRESS, from_addr, len)
 #endif
 #else				/* #ifdef DEBUG */
 #define MSG(string, args...)
@@ -170,7 +160,7 @@
 	}                                                                         \
 	else                                                                      \
 		intr = '.';                                                           \
-										                                      \
+																			\
 	if (PRINTCTX_SHOWHDR == 1)                                                \
 		pr_debug("CPU)  task_name:PID  | irqs,need-resched,hard/softirq,preempt-depth  /* func_name() */\n"); \
 	pr_debug(                                                                    \
@@ -301,17 +291,17 @@ void delay_sec(long val)
 #include <linux/jiffies.h>
 #include <linux/ktime.h>
 #define SHOW_DELTA(later, earlier)  do {    \
-    if (time_after((unsigned long)later, (unsigned long)earlier)) { \
-	    s64 delta_ns = ktime_to_ns(ktime_sub(later, earlier));      \
-        pr_info("delta: %lld ns", delta_ns);       \
+	if (time_after((unsigned long)later, (unsigned long)earlier)) { \
+		s64 delta_ns = ktime_to_ns(ktime_sub(later, earlier));      \
+		pr_info("delta: %lld ns", delta_ns);       \
 		if (delta_ns/1000 >= 1)                    \
 			pr_cont(" (~ %lld us", delta_ns/1000);   \
 		if (delta_ns/1000000 >= 1)                 \
 			pr_cont(" ~ %lld ms", delta_ns/1000000); \
 		if (delta_ns/1000 >= 1)                    \
 			pr_cont(")\n");                         \
-    } else  \
-        pr_warn("SHOW_DELTA(): *invalid* earlier > later? (check order of params)\n");  \
+	} else  \
+		pr_warn("SHOW_DELTA(): *invalid* earlier > later? (check order of params)\n");  \
 } while (0)
 #endif   /* #ifdef __KERNEL__ */
 
