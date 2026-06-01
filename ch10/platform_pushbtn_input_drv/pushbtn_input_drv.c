@@ -42,7 +42,6 @@
 #include <linux/input.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>		// of_* APIs (OF = Open Firmware)
-#include <linux/refcount.h>
 #include <linux/of_device.h>
 #include <linux/version.h>
 
@@ -57,7 +56,7 @@ struct pushbtn_device {
 	struct gpio_desc *gpio;
 	struct input_dev *input;
 	int irq;
-	refcount_t irqcount;
+	atomic_t irqcount;
 };
 static const struct of_device_id my_of_ids[];
 /*
@@ -84,14 +83,14 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	 *  state = gpiod_get_value_cansleep(pushb->gpio);
 	 */
 	dev_dbg(dev, "irq:count=%u:btn-state=%d\n",
-		refcount_read(&pushb->irqcount), state);
+		atomic_read(&pushb->irqcount), state);
 
 	/* Report key event (KEY_xxx from include/uapi/linux/input-event-codes.h) */
 	input_report_key(pushb->input, key_or_btn, state);
 	if (state == 0)		// sync only on key/btn release
 		input_sync(pushb->input);
 
-	refcount_inc(&pushb->irqcount);
+	atomic_inc(&pushb->irqcount);
 
 	return IRQ_HANDLED;
 }
@@ -178,7 +177,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	if (ret)
 		dev_err_probe(dev, ret, "failed at input_register_device()\n");
 	platform_set_drvdata(pdev, pushb);
-	refcount_set(&pushb->irqcount, 1);
+	atomic_set(&pushb->irqcount, 0);
 
 	return 0;
 }
@@ -193,7 +192,7 @@ void input_pushbtn_platdev_remove(struct platform_device *pdev)
 	struct pushbtn_device *pushb = platform_get_drvdata(pdev);
 
 	dev_dbg(dev, "in platform driver remove method:\n"
-		"# irq or input events = %u\n", refcount_read(&pushb->irqcount));
+		"# irq or input events = %u\n", atomic_read(&pushb->irqcount));
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 11, 0)
 	return 0;
