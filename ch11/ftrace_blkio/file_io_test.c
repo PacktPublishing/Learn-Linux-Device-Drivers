@@ -17,7 +17,11 @@ int main(int argc, char *argv[])
     }
 */
     unlink("TEST"); // Remove the file if it exists
-    system("echo 'Hello, block IO world!' > TEST"); // Create a test file with some content
+    // Create a test file with some content
+    if (system("echo 'Hello, block IO world!' > TEST") < 0) { 
+        perror("system");
+        exit(EXIT_FAILURE);
+    }
     fd = open("TEST", O_RDWR | O_APPEND);
     if (fd == -1) {
         perror("open");
