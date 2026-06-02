@@ -1,7 +1,9 @@
 #!/bin/bash
 # Script to run the blk io trace example
 # Usage: ./trace_io.sh
-# Check if the program is built
+# Simple wrapper around trace-cmd to run file_io_test and capture relevant trace events.
+# Kaiwan N Billimoria, kaiwanTECH
+
 # Turn on unofficial Bash 'strict mode'! V useful
 # "Convert many kinds of hidden, intermittent, or subtle bugs into immediate, glaringly obvious errors"
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
