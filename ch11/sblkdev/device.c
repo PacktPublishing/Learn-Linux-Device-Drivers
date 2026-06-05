@@ -10,8 +10,6 @@
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 
-// TODO : use resource managed devm_* APIs for better error handling and cleanup
-
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
 	int ret = BLK_STS_OK;
@@ -60,16 +58,16 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
  * the block layer (blk-mq) has a request ready for hardware.
  *
  * It runs in the context that the I/O request was issued in: typically process
- * context - that of the userspace process/thread that invoked the I/O
+ * context - that of the userspace process/thread that invoked the I/O.
  * (Can run in softirq context as well. Our PRINT_CTX() macro reveals the
- * precise context.) Regardless, no sleeping/blocking's allowed here...
+ * precise context.) Regardless, NO sleeping/blocking's allowed here...
  */
 static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct blk_mq_queue_data *bd)
 {
 	unsigned int nr_bytes = 0;
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq; // the in-flight I/O request
-	struct device *dev;
+	struct device *dev = disk_to_dev(rq->q->disk);
 
 	cant_sleep(); /* Cannot do anything that's blocking! */
 	PRINT_CTX();
@@ -280,15 +278,15 @@ static int sblkdev_compat_ioctl(struct block_device *bdev, fmode_t mode,
 
 // Device management (or control) plane ops
 static const struct block_device_operations fops = {
-	.owner = THIS_MODULE,
-	.open = sblkdev_open,
-	.release = sblkdev_release,
-	.ioctl = sblkdev_ioctl,
+	.owner        = THIS_MODULE,
+	.open         = sblkdev_open,
+	.release      = sblkdev_release,
+	.ioctl        = sblkdev_ioctl,
 #ifdef CONFIG_COMPAT
 	.compat_ioctl = sblkdev_compat_ioctl,
 #endif
 #ifndef CONFIG_SBLKDEV_REQUESTS_BASED
-	.submit_bio = sblkdev_submit_bio,	// only for a BIO-based driver
+	.submit_bio   = sblkdev_submit_bio,	// only for a BIO-based driver
 #endif
 };
 
@@ -321,15 +319,13 @@ void sblkdev_remove(struct sblkdev_device *dev)
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 {
-	set->ops = &mq_ops;	// block driver 'request function' setup
+	set->ops = &mq_ops;		// block driver 'request function' setup
 	set->nr_hw_queues = 1;
 	set->nr_maps = 1;
 	set->queue_depth = 128;
 	set->numa_node = NUMA_NO_NODE;
 	set->flags = BLK_MQ_F_STACKING;
-	//set->flags = BLK_MQ_F_SHOULD_MERGE | BLK_MQ_F_STACKING; // not on 6.14?
-
-	set->cmd_size = 0;	// additional bytes to alloc per request
+	set->cmd_size = 0;		// additional bytes to alloc per request
 	set->driver_data = data;
 
 	// 'Alloc a tag set to be associated with one or more request queues.'
@@ -434,9 +430,9 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 
 	/*--- Block driver init step 3 - allocate the disk
 	 * >=5.14: blk_mq_alloc_disk() is a kernel macro, a tiny wrapper over
-	 * __blk_mq_alloc_disk().
-	 * If < 5.14 we have our own implementation of this func,
-	 *  my_blk_mq_alloc_disk()
+	 * __blk_mq_alloc_disk(). (The HAVE_BLK_MQ_ALLOC_DISK is defined.)
+     * If < 5.14 (HAVE_BLK_MQ_ALLOC_DISK undefined); we have our own
+	 * implementation of this func, my_blk_mq_alloc_disk()
 	 */
 	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
 	if (unlikely(!disk)) {

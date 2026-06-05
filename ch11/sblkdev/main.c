@@ -12,8 +12,6 @@
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-// TODO : use resource managed devm_* APIs for better error handling and cleanup
-
 #include <linux/module.h>
 #include "device.h"
 
