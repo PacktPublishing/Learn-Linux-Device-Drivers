@@ -232,9 +232,23 @@ Miscellaneous:
     - [Introduction to device mapper multipathing (“multipath”), Ubuntu Server docs](https://ubuntu.com/server/docs/explanation/intro-to/multipath/)
     - [Device Mapper Multipath, an Introduction, Oracle blog, Aug 2024](https://blogs.oracle.com/linux/device-mapper-multipath-an-introduction)
     - [Configuring and managing Device Mapper Multipath, RedHat RHEL7](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html-single/dm_multipath/index)
-- []()
-- []()
+
+- [Block Device Drivers; excellent](https://linux-kernel-labs.github.io/refs/heads/master/labs/block_device_drivers.html#block-device-drivers)
+- [Block - official kernel docs](https://www.kernel.org/doc/html/v6.18/block/index.html)
+    - [Multi-Queue Block IO Queueing Mechanism (blk-mq) for 6.18](https://www.kernel.org/doc/html/v6.18/block/blk-mq.html)
+    - Includes links to docs describing the I/O schedulers
 
 - [Linux Multi-Queue Block IO Queueing Mechanism (blk-mq) Details, Werner Fischer, Thomas Krenn, 2015](https://www.thomas-krenn.com/en/wiki/Linux_Multi-Queue_Block_IO_Queueing_Mechanism_(blk-mq)_Details)
+
+- *NVMe protocol:*
+    - [Overview of NVMe Architecture, Oracle blog, Nov 2025](https://blogs.oracle.com/linux/overview-of-nvme-architecture)
+    - [NVMe: What - (this article nicely describes PRP and SGL with diagrams)](https://vatiminxuyu.gitbooks.io/xuyu/content/blog/nvme-what.html)
+    - [NVMe - (useful for driver authors)](https://wiki.osdev.org/NVMe)
+    - [The NVMe Specification, 1.1a, Sept 2013](https://www.nvmexpress.org/wp-content/uploads/NVM-Express-1_1a.pdf)
+    - [SGL in NVM Express, mingw, Medium, Feb 2025](https://medium.com/@wmwby/sgl-in-nvm-express-7e9ac9c1c652)
+
+- [Did you know that userspace block drivers are possible too!? 'Userspace block device driver (ublk driver)
+' - official kernel doc](https://www.kernel.org/doc/html/latest/block/ublk.html)
+
 
 [End Doc]
