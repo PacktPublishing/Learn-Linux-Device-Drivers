@@ -74,7 +74,6 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	cant_sleep(); /* Cannot do anything that's blocking! */
 	PRINT_CTX();
 
-	dev = disk_to_dev(rq->q->disk);
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
 		 rq->tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
@@ -185,8 +184,10 @@ static int sblkdev_open(struct block_device *bdev, fmode_t mode)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 5, 0)
 	struct sblkdev_device *dev = disk->private_data;
+	struct device *dvc = disk_to_dev(disk);
 #else
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
+	struct device *dvc = disk_to_dev(bdev->bd_disk);
 #endif
 
 	if (!dev) {
@@ -194,7 +195,7 @@ static int sblkdev_open(struct block_device *bdev, fmode_t mode)
 		return -ENXIO;
 	}
 
-	pr_debug("Device was opened\n");
+	dev_dbg(dvc, "Device was opened\n");
 	PRINT_CTX();
 
 	return 0;
@@ -207,13 +208,14 @@ static void sblkdev_release(struct gendisk *disk, fmode_t mode)
 #endif
 {
 	struct sblkdev_device *dev = disk->private_data;
+	struct device *dvc = disk_to_dev(disk);
 
 	if (!dev) {
 		pr_err("Invalid disk private_data\n");
 		return;
 	}
 
-	pr_debug("Device was closed\n");
+	dev_dbg(dvc, "Device was closed\n");
 	PRINT_CTX();
 }
 
@@ -253,8 +255,9 @@ static inline int ioctl_hdio_getgeo(struct sblkdev_device *dev, unsigned long ar
 static int sblkdev_ioctl(struct block_device *bdev, fmode_t mode, unsigned int cmd, unsigned long arg)
 {
 	struct sblkdev_device *dev = bdev->bd_disk->private_data;
+	struct device *dvc = disk_to_dev(bdev->bd_disk);
 
-	pr_debug("contol command [0x%x] received\n", cmd);
+	dev_dbg(dvc, "sblkdev_ioctl(): control command [0x%x] received\n", cmd);
 
 	switch (cmd) {
 	case HDIO_GETGEO:
