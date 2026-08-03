@@ -90,8 +90,7 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 
 	/* Report key event (KEY_xxx from include/uapi/linux/input-event-codes.h) */
 	input_report_key(pushb->input, key_or_btn, state);
-	if (state == 0)		// sync only on key/btn release
-		input_sync(pushb->input);
+	input_sync(pushb->input);
 
 	atomic_inc(&pushb->irqcount);
 
@@ -148,8 +147,8 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	/* Register the IRQ via a threaded handler */
 	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
 					NULL, key_irq_handler,
-					IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
-					IRQF_ONESHOT, "pushbtn-simple", pushb);
+					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
+					"pushbtn-simple", pushb);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
