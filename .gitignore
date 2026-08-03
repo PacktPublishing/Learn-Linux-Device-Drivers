@@ -2,6 +2,7 @@
 .*
 .*.swp
 *.bkp
+older/
 bkp/
 *.patch
 *.dat
