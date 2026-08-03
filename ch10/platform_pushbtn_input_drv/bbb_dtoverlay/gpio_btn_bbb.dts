@@ -1,0 +1,86 @@
+/*
+ * DTSO - DT overlay source file
+ *
+ * DT overlay for the simple pushbutton platform input driver for the TI
+ * BeagleBone Black (bbb) board.
+ * This DTSO file MUST be placed within the target kernel source tree so that
+ * it can be built via the 'make dtbs'; necessary as we include kernel headers
+ * and employ macros like AM33XX_IOPAD(). 
+ */
+/dts-v1/;
+/plugin/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/am33xx.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		BBB-GPIO-PUSHBTN.kernel = __TIMESTAMP__;
+	};
+};
+
+/*
+ * VERY IMP
+ * Typically, two sections of the DT (Overlay) need configuration:
+ * - the PinMux, in order to make the required pin(s) visible on the CPU pads, and
+ * - the device itself, in order to launch and configure its device driver
+ */
+
+&am33xx_pinmux {
+	pushbutton_pins: pinmux_pushbutton_pins {
+                pinctrl-single,pins = <
+                    AM33XX_IOPAD(0x844, PIN_INPUT_PULLDOWN | MUX_MODE7)
+		     /* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
+	                    >;
+	/*
+	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
+	 * https://github.com/beagleboard/beaglebone-black/blob/master/BBB_SRM.pdf
+	 *  where: Connectors / Expansion Connectors / Connector P9   (pg 67,68)
+	 *
+	 * GPIO_49 is phy pin P9_23, CPU pin V14, pin name GPIO_17, mode 0 gpmc_a1;
+	 * It's at pinmux reg offset 0x844, and 'mode 7' maps to 'gpio1[17]'!
+	 * Always use mode 7 for GPIO.
+	 */
+	};
+};
+
+&{/} {
+        /* Create a (pseudo) on-chip peripheral (ocp) named 'pushbtn_device' */
+        pushbtn_device {
+		compatible = "lddia,pushbtn_simple";
+		label = "demo pushbtn device";
+		purpose = "launch button";
+		my_value = <42>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pushbutton_pins>;
+
+		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+		/*
+		 * Explanation for the above line:
+		 * format for gpio: 
+		 *  <name>-gpios = <&GPIO-phandle GPIO-pin-number-or-offset-in-bank  consumer-flags>;
+		 *
+		 * So:
+		 *  <name>-gpios = pushbtn-gpios ; the name prefix 'pushbtn' reflects the
+		 *    purpose of this GPIO for the device
+		 *  &gpio1 : the GPIO handle, refers to GPIO bank #1
+		 *  17 : the GPIO pin # or offset (phy pin P9_23 on the board P9 header)
+		 *  GPIO_ACTIVE_HIGH : the GPIO flag; sets the pin specified to active high state
+		 *  Ref: arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
+		 *       https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
+		 */
+
+		/* FYI: we could use these properties to describe the interrupt model:
+		 *	interrupt-parent = <&gpio1>;
+		 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
+		 * However, this  sacrifices the ability to use the devm_gpiod_get() etc in
+		 * the driver! So, we don't do this; instead, in the driver, we employ the
+		 * devm_gpiod_get() and gpiod_to_irq() routines to fetch the allocated IRQ line.
+		 */
+		status = "okay";
+	};
+};
