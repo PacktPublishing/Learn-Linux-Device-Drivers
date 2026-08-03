@@ -76,7 +76,10 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	struct device *dev = &pushb->input->dev;
 	int state;
 
-	/* Read current GPIO state */
+	/* Read the current GPIO (in effect, pushbutton) state
+	 * Imp to realize that this can only work via the devm_gpiod_get() approach;
+	 * it can't work if we used the 'interrupt*'-only properties in the DT overlay.
+	 */
 	state = gpiod_get_value(pushb->gpio);
 	/*
 	 * Alternately, we can also do so in a blocking manner with
@@ -118,6 +121,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 * addresses, interrupt numbers and other device-specific information
 	 */
 
+#if 1
 	/* Get GPIO descriptor from device tree
 	 *  property name before -gpio is what you use in devm_gpiod_get()
 	 *  DT:
@@ -133,6 +137,12 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	pushb->irq = gpiod_to_irq(pushb->gpio);
 	if (pushb->irq < 0)
 		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
+	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
+#else
+	pushb->irq = platform_get_irq(pdev, 0);
+#endif
+	if (pushb->irq < 0)
+		return dev_err_probe(dev, pushb->irq, "failed at platform_get_irq()\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 
 	/* Register the IRQ via a threaded handler */
