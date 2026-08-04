@@ -35,8 +35,6 @@
                 pinctrl-single,pins = <
                     AM33XX_IOPAD(0x844, PIN_INPUT_PULLDOWN | MUX_MODE7)
 		     /* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
-                    /* AM33XX_IOPAD(0x878, PIN_INPUT_PULLDOWN | MUX_MODE7) */
-		     /* conf_gpmc_ben1 (GPIO1_28 on BBB SRM), P9_12, pushbutton connected to 3V3 */
 	                    >;
 	/*
 	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
@@ -61,7 +59,6 @@
 		pinctrl-0 = <&pushbutton_pins>; /* link to the PinMux */
 
 		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>; // for P9_23
-		//pushbtn-gpios = <&gpio1 28 GPIO_ACTIVE_HIGH>; // for P9_12
 		/*
 		 * Explanation for the above line:
 		 * format for gpio: 
