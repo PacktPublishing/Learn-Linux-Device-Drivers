@@ -125,8 +125,8 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 *  property name before -gpio is what you use in devm_gpiod_get()
 	 *  DT:
 	 *  ...
-	 *	pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_LOW>;
-	 * ref: https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
+	 *	pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+	 * ref: https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/bindings/gpio/gpio.txt
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
@@ -136,7 +136,6 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	pushb->irq = gpiod_to_irq(pushb->gpio);
 	if (pushb->irq < 0)
 		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
-	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 #else
 	pushb->irq = platform_get_irq(pdev, 0);
 #endif
