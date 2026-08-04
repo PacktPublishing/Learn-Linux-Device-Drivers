@@ -35,6 +35,8 @@
                 pinctrl-single,pins = <
                     AM33XX_IOPAD(0x844, PIN_INPUT_PULLDOWN | MUX_MODE7)
 		     /* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
+                    /* AM33XX_IOPAD(0x878, PIN_INPUT_PULLDOWN | MUX_MODE7) */
+		     /* conf_gpmc_ben1 (GPIO1_28 on BBB SRM), P9_12, pushbutton connected to 3V3 */
 	                    >;
 	/*
 	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
@@ -56,20 +58,32 @@
 		purpose = "launch button";
 		my_value = <42>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&pushbutton_pins>;
+		pinctrl-0 = <&pushbutton_pins>; /* link to the PinMux */
 
-		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+		pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>; // for P9_23
+		//pushbtn-gpios = <&gpio1 28 GPIO_ACTIVE_HIGH>; // for P9_12
 		/*
 		 * Explanation for the above line:
 		 * format for gpio: 
 		 *  <name>-gpios = <&GPIO-phandle GPIO-pin-number-or-offset-in-bank  consumer-flags>;
-		 *
+		 *        1              2                         3                        4
 		 * So:
-		 *  <name>-gpios = pushbtn-gpios ; the name prefix 'pushbtn' reflects the
+		 *  1. <name>-gpios = pushbtn-gpios ; the name prefix 'pushbtn' reflects the
 		 *    purpose of this GPIO for the device
-		 *  &gpio1 : the GPIO handle, refers to GPIO bank #1
-		 *  17 : the GPIO pin # or offset (phy pin P9_23 on the board P9 header)
-		 *  GPIO_ACTIVE_HIGH : the GPIO flag; sets the pin specified to active high state
+		 *  2. &gpio1 : the GPIO handle, refers to GPIO bank #1
+		 *  3. 17 : the GPIO bank offset:
+		 *     Method 1:
+		 *     Lookup the BBB SRM : Table 13. Expansion Header P9 Pinout
+	         * PIN PROC NAME    MODE0   MODE1 MODE2 MODE3       MODE4     MODE5    MODE6         MODE7        
+	         * 23 V14 GPIO1_17 gpmc_a1 gmii2_rxdv  rgmii2_rxdv mmc2_dat0 gpmc_a17 ehrpwm0_synco gpio1[17]
+	         * The NAME col shows GPIO_17 ; so the GPIO bank offset is 17.
+	         * (FYI: The GPIO bank is 1 (as it shows as NAME is GPIO1_17). PROC is the pin number on the processor.)
+		 *       Method 2:
+		 * grep '44e10844' /sys/kernel/debug/pinctrl/44e10800.pinmux-pinctrl-single/pins
+		 * pin 17 (PIN17) 17:gpio-0-31 44e10844 00000027 pinctrl-single
+		 *                ^^
+		 *	          GPIO offset!
+		 *  4. GPIO_ACTIVE_HIGH : the GPIO flag; sets the pin specified to active high state
 		 *  Ref: arch/arm/boot/dts/ti/omap/am335x-boneblack.dts
 		 *       https://elixir.bootlin.com/linux/v6.12.17/source/Documentation/devicetree/bindings/gpio/gpio.txt
 		 */
