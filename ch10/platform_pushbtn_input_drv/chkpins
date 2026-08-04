@@ -1,0 +1,56 @@
+#!/bin/bash
+# Script to check the pin state
+
+# Turn on unofficial Bash 'strict mode'! V useful
+# "Convert many kinds of hidden, intermittent, or subtle bugs into immediate, glaringly obvious errors"
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+name=$(basename $0)
+
+die() 
+{
+	echo >&2 "FATAL:${name}: $" ; exit 1 
+} 
+warn() 
+{
+	echo >&2 "WARNING:${name}: $" 
+}
+
+# runcmd
+# Parameters
+#   $1 ... : params are the command to run
+runcmd() {
+[[ $# -eq 0 ]] && return
+ echo "$@" 
+ eval "$@" 
+}
+
+#--- 'main'
+
+# anyone already using pins?
+runcmd "dmesg | grep -iE 'pinctrl|pin.*already'"
+
+P=/sys/kernel/debug/pinctrl/44e10800.pinmux-pinctrl-single
+
+# pin_num
+# Calculation of pin number: P9_23 is at offset 0x844 (from the Control_Module registers
+#  which begin at 0x44e1 0800). So actual offset = 0x844 - 0x800 = 0x44.
+#  Each register is 32 bits (4 bytes) wide;
+#  so, pin or register offset = 0x44/4 = 68/4 = 17.
+
+pin=P9_23
+pin_num=17
+pin_abs_off=0844   # P9_23
+
+#pin=P9_12
+#pin_num=30
+#pin_abs_off=0878   # P9_12
+
+echo
+echo "--- For pin ${pin} ---"
+runcmd "grep '44e1${pin_abs_off}' $P/pins"  # want 00000027
+echo
+runcmd "grep '^pin ${pin_num} ' $P/pinmux-pins"   # want our device named as owner
+echo
+runcmd "grep ${pin} /sys/kernel/debug/gpio" # want idle lo, held hi
