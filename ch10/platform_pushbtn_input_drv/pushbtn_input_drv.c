@@ -12,10 +12,10 @@
  ****************************************************************
  * Brief Description:
  * Input (platform) driver for a simple GPIO pushbutton.
- * We wire a GPIO line from the embedded target board - here it's a TI BeagleBone
- * Black - across a 1k resistor and a simple pushbutton switch (to which 3.3V
- * power is applied, and thus the circuit gets made when the button’s pressed
- * down) on a breadboard.
+ * We wire a GPIO line from the embedded target board - here it's a BeagleBone
+ * Black - across a 1k resistor and a simple pushbutton switch (one leg to 3.3V
+ * power is applied, the other leg to the P9_23 GPIO line; thus, the circuit
+ * gets made when the button’s pressed (and when released).
  * This causes an interrupt (IRQ) to be raised! How? As we map the GPIO line to
  * an IRQ line; please carefully refer the Device Tree Overlay source file
  * (bbb_dtoverlay/gpio_btn_bbb.dts, and this driver code) to see how exactly
@@ -24,7 +24,7 @@
  * - The board P9 (left) header’s VDD 3.3 V - physical pin 4 – for power (red
  *   color wire), and
  * - The board P9 header’s GPIO_49 – physical pin 23 – as the input GPIO to the
- *   pushbutton (orange+yellow color wire).
+ *   pushbutton (white color wire).
  * (Refer the schematic and photo in the book - Figures 10.5 and 10.6.)
  *
  * _Secure probe_: care is taken to validate DT compatible string(s), properties,
@@ -143,14 +143,6 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, pushb->irq, "failed at platform_get_irq()\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 
-	/* Register the IRQ via a threaded handler */
-	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
-					NULL, key_irq_handler,
-					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
-					"pushbtn-simple", pushb);
-	if (ret)
-		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
-
 	/* Just fyi, let's retrieve the 'purpose' property by name */
 	if (pdev->dev.of_node) {
 		prop = of_get_property(pdev->dev.of_node, "purpose", &len);
@@ -186,6 +178,19 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, ret, "failed at input_register_device()\n");
 	platform_set_drvdata(pdev, pushb);
 	atomic_set(&pushb->irqcount, 0);
+
+	/*
+	 * Register the IRQ via a threaded handler. We deliberately do this last
+	 * to avoid any potential race: what if we register the IRQ early, it
+	 * fires, and the rest of the work isn't done yet!? This could lead to
+	 * a crash...
+	 */
+	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
+					NULL, key_irq_handler,
+					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
+					"pushbtn-simple", pushb);
+	if (ret)
+		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
 	return 0;
 }
