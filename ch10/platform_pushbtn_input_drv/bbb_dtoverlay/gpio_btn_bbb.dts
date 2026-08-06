@@ -26,15 +26,16 @@
 /*
  * VERY IMP
  * Typically, two sections of the DT (Overlay) need configuration:
- * - the PinMux, in order to make the required pin(s) visible on the CPU pads, and
+ * - the PinMux, in order to make the required pin(s) functionality visible on
+ *   the CPU/SoC pads, and
  * - the device itself, in order to launch and configure its device driver
  */
 
 &am33xx_pinmux {
 	pushbutton_pins: pinmux_pushbutton_pins {
                 pinctrl-single,pins = <
-                    AM33XX_IOPAD(0x844, PIN_INPUT_PULLDOWN | MUX_MODE7)
-		     /* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
+			AM33XX_IOPAD(AM335X_PIN_GPMC_A1, PIN_INPUT_PULLDOWN | MUX_MODE7)
+			/* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
 	                    >;
 	/*
 	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
@@ -42,8 +43,8 @@
 	 *  where: Connectors / Expansion Connectors / Connector P9   (pg 67,68)
 	 *
 	 * GPIO_49 is phy pin P9_23, CPU pin V14, pin name GPIO_17, mode 0 gpmc_a1;
-	 * It's at pinmux reg offset 0x844, and 'mode 7' maps to 'gpio1[17]'!
-	 * Always use mode 7 for GPIO.
+	 * It's at pinmux reg offset AM335X_PIN_GPMC_A1 (=0x844), and 'mode 7'
+	 * maps to 'gpio1[17]'! Always use mode 7 for GPIO.
 	 */
 	};
 };
@@ -62,8 +63,8 @@
 		/*
 		 * Explanation for the above line:
 		 * format for gpio: 
-		 *  <name>-gpios = <&GPIO-phandle GPIO-pin-number-or-offset-in-bank  consumer-flags>;
-		 *        1              2                         3                        4
+		 *  <name>-gpios = <&GPIO-phandle GPIO-offset-in-bank  consumer-flags>;
+		 *        1              2               3                    4
 		 * So:
 		 *  1. <name>-gpios = pushbtn-gpios ; the name prefix 'pushbtn' reflects the
 		 *    purpose of this GPIO for the device
