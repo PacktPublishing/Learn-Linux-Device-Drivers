@@ -12,6 +12,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/am33xx.h>
+#include "../../../../../../include/uapi/linux/input-event-codes.h"
 #include <dt-bindings/interrupt-controller/irq.h>
 
 /*
@@ -33,9 +34,9 @@
 
 &am33xx_pinmux {
 	pushbutton_pins: pinmux_pushbutton_pins {
-                pinctrl-single,pins = <
-			AM33XX_IOPAD(AM335X_PIN_GPMC_A1, PIN_INPUT_PULLDOWN | MUX_MODE7)
-			/* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
+		pinctrl-single,pins = <
+		  AM33XX_IOPAD(AM335X_PIN_GPMC_A1, PIN_INPUT_PULLDOWN | MUX_MODE7)
+		   /* gpmc_a1.gpio1_17, P9_23, pushbutton connected to 3V3 */
 	                    >;
 	/*
 	 * Ref: BeagleBone Black Technical Reference Manual (TRM), 2025 (PDF):
@@ -54,8 +55,11 @@
         pushbtn_device {
 		compatible = "lddia,pushbtn_simple";
 		label = "demo pushbtn device";
+		keyval = <KEY_ENTER>;
+		//keyval = <KEY_ASSISTANT>;
+				/* the actual input event key or button
+				 * emananted by our pushbutton */
 		purpose = "launch button";
-		my_value = <42>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&pushbutton_pins>; /* link to the PinMux */
 

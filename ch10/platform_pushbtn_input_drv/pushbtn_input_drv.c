@@ -59,16 +59,19 @@ struct pushbtn_device {
 	atomic_t irqcount;
 };
 static const struct of_device_id my_of_ids[];
+
 /*
  * Which key or button to emit on our pushbutton press & release.
  * You can change this to any key or button you like!
  * (KEY_xxx from include/uapi/linux/input-event-codes.h)
- * (We don't do this via a module parameter as that will require
- * a wrapper script to parse the key or btn macro as an integer
- * and then pass it (we do this kind of thing in a later USB input
- * driver; keep an eye out!)
+ * Now, as a best practice, we'd rather not hard-code the value here and instead
+ * specify it's value in the DT overlay for this project, and just retrieve it
+ * from the DT here.
+ * (As well, we don't do this via a module parameter as that will require a
+ * wrapper script to parse the key or btn macro as an integer and then pass it
+ * (we do this kind of thing in a later USB input driver; keep an eye out!)
  */
-static int key_or_btn = KEY_ENTER;
+static int keyval;
 
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
@@ -89,7 +92,7 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 		atomic_read(&pushb->irqcount), state);
 
 	/* Report key event (KEY_xxx from include/uapi/linux/input-event-codes.h) */
-	input_report_key(pushb->input, key_or_btn, state);
+	input_report_key(pushb->input, keyval, state);
 	input_sync(pushb->input);
 
 	atomic_inc(&pushb->irqcount);
@@ -137,6 +140,9 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	if (pushb->irq < 0)
 		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
 #else
+	/* Do it this way if we specified the IRQ line via the interrupt_parent = ...
+	 * and interrupts = ... properties in the DT
+	 */
 	pushb->irq = platform_get_irq(pdev, 0);
 #endif
 	if (pushb->irq < 0)
@@ -161,16 +167,20 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
 	pushb->input->phys = "pushbtn_simple/input0";
-	/* Which input events this device supports */
-	input_set_capability(pushb->input, EV_KEY, key_or_btn);
-	/*
-	 * Can also achieve setting the input dev capabilities (the above) via:
-	 *	pushb->input->evbit[0] = BIT_MASK(EV_KEY);
-	 *	pushb->input->keybit[BIT_WORD(key_or_btn)] = BIT_MASK(key_or_btn);
-	 * or like this:
-	 * 	set_bit(EV_KEY, pushb->input->evbit);
-	 * 	set_bit(key_or_btn, pushb->input->keybit);
+
+	/* Which input events this device supports; as a best-practice, we
+	 * don't hard-code it in the driver; instead, we define it in the
+	 * DT overlay (as the 'keyval' property).
+	 *
+	 * First fetch the 'keyval' DT property - the key or button event to
+	 * emanate when our pusbutton's pressed
 	 */
+	len = of_property_read_s32(pdev->dev.of_node, "keyval", &keyval);
+	if (len < 0)
+		dev_warn(dev, "getting DT property 'keyval' failed\n");
+	dev_dbg(dev, "DT property 'keyval' = %d\n", keyval);
+	// Now set the capability bits
+	input_set_capability(pushb->input, EV_KEY, keyval);
 
 	/* Register input device */
 	ret = input_register_device(pushb->input);
