@@ -30,6 +30,9 @@
  * _Secure probe_: care is taken to validate DT compatible string(s), properties,
  * check and report function errors, etc.
  *
+ * We also perform button debounce, via a hardware-first-fallback-to-software
+ * approach.
+ *
  * For details, please refer the book, Ch 10.
  * (c) Kaiwan N Billimoria, kaiwanTECH
  * License: Dual MIT/GPL
@@ -57,9 +60,12 @@ struct pushbtn_device {
 	struct input_dev *input;
 	int keyval;
 	int irq;
+	unsigned int sw_debounce_ms;	/* 0 => HW debounce in use */
 	atomic_t irqcount;
 };
 /*
+ * This comment is wrt the pushbtn_device.keyval member:
+ *
  * Which key or button to emit on our pushbutton press & release.
  * You can change this to any key or button you like!
  * (KEY_xxx from include/uapi/linux/input-event-codes.h)
@@ -72,20 +78,61 @@ struct pushbtn_device {
  */
 static const struct of_device_id my_of_ids[];
 
+/*
+ * Button debounce: typical mechanical switch bounce is ~1-10 ms. However, the
+ * AM335x GPIO (HW) debounce has a ceiling of ~7.9 ms, so asking for 10 ms here
+ * would fail with -EINVAL; so we ask for 5 ms.
+ * In addition, we use a try-via-hardware-if-it-fails-use-software debounce
+ * approach.
+ */
+#define PUSHBTN_DEBOUNCE_MS	5
+#include <linux/delay.h>
+#include <linux/time64.h>	// USEC_TO_MSEC
+
+static int debounce_setup(struct device *dev, struct pushbtn_device *pushb)
+{
+	int ret;
+
+	ret = gpiod_set_debounce(pushb->gpio,
+			 PUSHBTN_DEBOUNCE_MS * USEC_PER_MSEC);
+	if (ret) {
+		pushb->sw_debounce_ms = PUSHBTN_DEBOUNCE_MS;
+		dev_info(dev, "HW debounce unavailable (%d);"
+			      "fallback to using %u ms software debounce\n",
+				 ret, pushb->sw_debounce_ms);
+	} else {
+		pushb->sw_debounce_ms = 0;
+		dev_info(dev, "HW debounce enabled (%u ms)\n", PUSHBTN_DEBOUNCE_MS);
+	}
+	return ret;
+}
+
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
 	struct pushbtn_device *pushb = dev_id;
 	struct device *dev = &pushb->input->dev;
 	int state;
 
+	/*
+	 * Software debounce fallback. Simply sleep for PUSHBTN_DEBOUNCE_MS ms.
+	 * This only takes effect if the HW debounce doesn't work out.
+	 * Next, we're running in an IRQ thread, so we can sleep here. Even
+	 * better: the IRQF_ONESHOT keeps the IRQ line masked for the whole
+	 * duration of this thread func - so any bounce burst is swallowed
+	 * while we sleep, and on waking we read the line's *settled* state.
+	 */
+	if (pushb->sw_debounce_ms)
+		msleep(pushb->sw_debounce_ms);
+
 	/* Read the current GPIO (in effect, pushbutton) state
 	 * Imp to realize that this can only work via the devm_gpiod_get() approach;
 	 * it can't work if we used the 'interrupt*'-only properties in the DT overlay.
+	 * Also, we're in a threaded handler, so using the blocking ver is fine.
 	 */
-	state = gpiod_get_value(pushb->gpio);
+	state = gpiod_get_value_cansleep(pushb->gpio);
 	/*
-	 * Alternately, we can also do so in a blocking manner with
-	 *  state = gpiod_get_value_cansleep(pushb->gpio);
+	 * Alternately, we can also do so in a non-blocking manner with
+	 *  state = gpiod_get_value(pushb->gpio);
 	 */
 	dev_dbg(dev, "irq:count=%u:btn-state=%d\n",
 		atomic_read(&pushb->irqcount), state);
@@ -103,13 +150,13 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 {
 	struct pushbtn_device *pushb;
 	struct device *dev = &pdev->dev;
-	const struct of_device_id *match; // security: explicit match validation
+	const struct of_device_id *match;	// security: explicit match validation
 	const char *prop = NULL;
 	int len = 0, ret;
 
 	dev_dbg(dev, "platform input driver probe enter\n");
 
-	match =	of_match_device(my_of_ids, dev);
+	match = of_match_device(my_of_ids, dev);
 	if (!match)
 		return dev_err_probe(dev, -ENODEV, "error matching compatible string\n");
 
@@ -127,12 +174,15 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 *  property name before -gpio is what you use in devm_gpiod_get()
 	 *  DT:
 	 *  ...
-	 *	pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+	 *      pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
 	 * ref: https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/bindings/gpio/gpio.txt
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
-		return dev_err_probe(dev, PTR_ERR(pushb->gpio), "Failed at devm_gpiod_get()\n");
+		return dev_err_probe(dev, PTR_ERR(pushb->gpio),
+				     "Failed at devm_gpiod_get()\n");
+
+	debounce_setup(dev, pushb);
 
 	/* Map to IRQ line */
 	pushb->irq = gpiod_to_irq(pushb->gpio);
@@ -145,7 +195,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	pushb->irq = platform_get_irq(pdev, 0);
 #endif
 	if (pushb->irq < 0)
-		return dev_err_probe(dev, pushb->irq, "failed at platform_get_irq()\n");
+		return dev_err_probe(dev, pushb->irq, "failed to obtain the IRQ line\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 
 	/* Just fyi, let's retrieve the 'purpose' property by name */
@@ -154,8 +204,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		if (!prop)
 			dev_warn(dev, "getting DT property 'purpose' failed\n");
 		else
-			dev_info(dev, "DT property 'purpose' = \"%s\" (len=%d)\n",
-				prop, len);
+			dev_info(dev, "DT property 'purpose' = \"%s\" (len=%d)\n", prop, len);
 	} else
 		dev_warn(dev, "couldn't access DT 'purpose' node\n");
 
@@ -236,9 +285,10 @@ static const struct of_device_id my_of_ids[] = {
 	 * property in the DT; *even a mismatched space will cause the match to
 	 * fail* !
 	 */
-	{ .compatible = "lddia,pushbtn_simple" },
+	{.compatible = "lddia,pushbtn_simple"},
 	{},
 };
+
 MODULE_DEVICE_TABLE(of, my_of_ids);
 #endif
 
@@ -257,8 +307,9 @@ static struct platform_driver pushbtn_platform_input_driver = {
 		   .of_match_table = of_match_ptr(my_of_ids),
 #endif
 		   .owner = THIS_MODULE,
-	},
+		   },
 };
+
 module_platform_driver(pushbtn_platform_input_driver);
 
 MODULE_LICENSE("Dual MIT/GPL");
