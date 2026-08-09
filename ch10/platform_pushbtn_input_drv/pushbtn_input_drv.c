@@ -55,11 +55,10 @@ void input_pushbtn_platdev_remove(struct platform_device *pdev);
 struct pushbtn_device {
 	struct gpio_desc *gpio;
 	struct input_dev *input;
+	int keyval;
 	int irq;
 	atomic_t irqcount;
 };
-static const struct of_device_id my_of_ids[];
-
 /*
  * Which key or button to emit on our pushbutton press & release.
  * You can change this to any key or button you like!
@@ -71,7 +70,7 @@ static const struct of_device_id my_of_ids[];
  * wrapper script to parse the key or btn macro as an integer and then pass it
  * (we do this kind of thing in a later USB input driver; keep an eye out!)
  */
-static int keyval;
+static const struct of_device_id my_of_ids[];
 
 static irqreturn_t key_irq_handler(int irq, void *dev_id)
 {
@@ -92,7 +91,7 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 		atomic_read(&pushb->irqcount), state);
 
 	/* Report key event (KEY_xxx from include/uapi/linux/input-event-codes.h) */
-	input_report_key(pushb->input, keyval, state);
+	input_report_key(pushb->input, pushb->keyval, state);
 	input_sync(pushb->input);
 
 	atomic_inc(&pushb->irqcount);
@@ -175,12 +174,18 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 * First fetch the 'keyval' DT property - the key or button event to
 	 * emanate when our pusbutton's pressed
 	 */
-	len = of_property_read_s32(pdev->dev.of_node, "keyval", &keyval);
-	if (len < 0)
-		dev_warn(dev, "getting DT property 'keyval' failed\n");
-	dev_dbg(dev, "DT property 'keyval' = %d\n", keyval);
+	//ret = of_property_read_s32(pdev->dev.of_node, "keyval", &keyval);
+	ret = of_property_read_s32(pdev->dev.of_node, "keyval", &pushb->keyval);
+	if (ret < 0)
+		return dev_err_probe(dev, ret,
+				     "failed at of_property_read_s32() fetching keyval from DT\n");
+	if (pushb->keyval <= 0 || pushb->keyval > KEY_MAX)
+		return dev_err_probe(dev, -EINVAL,
+				     "invalid DT keyval %d [valid range is 1..%d]\n",
+				     pushb->keyval, KEY_MAX);
+	dev_dbg(dev, "DT property 'keyval' = %d\n", pushb->keyval);
 	// Now set the capability bits
-	input_set_capability(pushb->input, EV_KEY, keyval);
+	input_set_capability(pushb->input, EV_KEY, pushb->keyval);
 
 	/* Register input device */
 	ret = input_register_device(pushb->input);
