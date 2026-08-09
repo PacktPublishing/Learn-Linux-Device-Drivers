@@ -12,7 +12,7 @@
  ****************************************************************
  * Intent: to use the kernel's builtin gpio-keys driver to make our simple
  * GPIO-based pushbutton input device work!
- * By setting up this simple DT overlay, we tell it about pushbutton; it auto
+ * By setting up this DT overlay, we tell it about our pushbutton; it auto
  * sets up the IRQ line mapped to the GPIO.
  *
  * NOTE: this particular DT overlay is designed for only the TI BBB.
@@ -41,14 +41,35 @@
 	};
 };
 
+/*
+ * VERY IMP
+ * Typically, two sections of the DT (Overlay) need configuration:
+ * - the PinMux, in order to make the required pin(s) functionality visible on
+ *   the CPU/SoC pads, and
+ * - the device itself, in order to launch and configure its device driver
+ */
+
+&am33xx_pinmux {
+	pushbtn_pins: pushbtn-pins {
+		/* P9_23 = gpmc_a1 = GPIO1_17  (BBB SRM)
+		 * 0x044 = AM335X_PIN_GPMC_A1 (0x844) - 0x800   (AM335X TRM)
+		 * 0x27  = PIN_INPUT_PULLDOWN (0x20) | MUX_MODE7 (0x07)
+		 */
+		pinctrl-single,pins = < 0x044 0x20 0x07 >;
+		//pinctrl-single,pins = < 0x078 0x27 >; // older 2-cell style
+	};
+};
+
 &{/} {
 	gpio-keys {
 		compatible = "gpio-keys";
-        
-		enter-button {
-			label = "PushButton Enter";
-			linux,code = <28>;     /* KEY_ENTER */
-			gpios = <&gpio1 17 1>; /* GPIO_ACTIVE_LOW is 1 */
+		pinctrl-names = "default";
+		pinctrl-0 = <&pushbtn_pins>;
+		button {
+			label = "LDDIA PushButton";
+			linux,code = <28>;      /* KEY_ENTER */
+			gpios = <&gpio1 17 0>;  /* 0 = GPIO_ACTIVE_HIGH */
+			debounce-interval = <5>;
 		};
 	};
 };
