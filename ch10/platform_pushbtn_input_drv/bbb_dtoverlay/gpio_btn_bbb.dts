@@ -4,8 +4,8 @@
  * DT overlay for the simple pushbutton platform input driver for the TI
  * BeagleBone Black (bbb) board.
  * This DTSO file MUST be placed within the target kernel source tree so that
- * it can be built via the 'make dtbs'; necessary as we include kernel headers
- * and employ macros like AM33XX_PADCONF(). 
+ * it can be built via the 'make dtbs'; this is required as we include kernel
+ * headers and employ macros like AM33XX_PADCONF(). 
  */
 /dts-v1/;
 /plugin/;
@@ -48,7 +48,7 @@
 		    *  In addition, this pin on the board (BBB) is:
 		    *   P9_23, pushbutton connected to 3V3
 		    */
-	                    >;
+		>;
 	/*
 	 * Ref: BeagleBone Black System Reference Manual (SRM), 2025 (PDF):
 	 * https://github.com/beagleboard/beaglebone-black/blob/master/BBB_SRM.pdf
@@ -87,11 +87,10 @@
 		 *  3. 17 : the GPIO bank offset:
 		 *     Method 1:
 		 *     Lookup the BBB SRM : Table 13. Expansion Header P9 Pinout
-	         * PIN PROC NAME    MODE0   MODE1 MODE2 MODE3       MODE4     MODE5    MODE6         MODE7
-	         * 23 V14 GPIO1_17 gpmc_a1 gmii2_rxdv  rgmii2_rxdv mmc2_dat0 gpmc_a17 ehrpwm0_synco gpio1[17]
-	         * The NAME col shows GPIO_17 ; so the GPIO bank offset is 17.
-	         * (FYI: The GPIO bank is 1 (as it shows as NAME is GPIO1_17).
-		 *  PROC is the pin number on the processor.)
+	         * PIN PROC NAME     MODE0   MODE1  MODE2  MODE3   MODE4     MODE5       MODE6         MODE7
+	         * 23  V14  GPIO1_17 gpmc_a1 gmii2_rxdv rgmii2_rxdv mmc2_dat0 gpmc_a17 - ehrpwm0_synco gpio1[17]
+	         * The NAME col shows it as GPIO1_17 ; so the GPIO bank is 1 and the offset is 17.
+	         * (FYI, PROC is the pin number on the processor.)
 		 *       Method 2:
 		 * grep '44e10844' /sys/kernel/debug/pinctrl/44e10800.pinmux-pinctrl-single/pins
 		 * pin 17 (PIN17) 17:gpio-0-31 44e10844 00000027 pinctrl-single
