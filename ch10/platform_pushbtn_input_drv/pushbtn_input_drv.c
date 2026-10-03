@@ -171,7 +171,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 
 #if 1
 	/* Get GPIO descriptor from device tree
-	 *  property name before -gpio is what you use in devm_gpiod_get()
+	 *  property name before -gpios is what you use in devm_gpiod_get()
 	 *  DT:
 	 *  ...
 	 *      pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
