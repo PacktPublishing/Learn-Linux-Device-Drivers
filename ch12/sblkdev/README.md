@@ -20,7 +20,7 @@ Features:
 - Compatible with Linux kernel from 5.10 to 6.0.
     - 6.8.y - tested on x86_64 Ubuntu 24.04 and Fedora 38 only
     - **[UPDATE - wrt the LDDIA book] : tested and working on 6.18.33 LTS**
- - Allows to create bio-based and request-based block devices.
+ - Allows to create bio-based and request-based block devices, with request-based being the default.
  - Allows to create multiple block devices.
  - The Linux kernel code style is followed (checked by checkpatch.pl).
 
@@ -84,30 +84,49 @@ $
     `
 
 
-////////////////
-How to use (run as root):
+---
+
+**How to use (run as root):**
+
 * Install kernel headers and compiler
-deb:
-	`apt install linux-headers gcc make`
-	or
-	`apt install dkms`
-rpm:
-	yum install kernel-headers
+
+  deb:
+  ```
+  apt install linux-headers gcc make
+  ```
+  or
+  ```
+  apt install dkms
+  ```
+  rpm:
+  ```
+  yum install kernel-headers
+  ```
 
 * Compile module
-	`cd ${HOME}/sblkdev; ./mk.sh build`
+  ```
+  cd ${HOME}/sblkdev; ./mk.sh build
+  ```
 
 * Install to current system
-	`cd ${HOME}/sblkdev; ./mk.sh install`
+  ```
+  cd ${HOME}/sblkdev; ./mk.sh install
+  ```
 
 * Load module
-	`modprobe sblkdev catalog="sblkdev1,2048;sblkdev2,4096"`
+  ```
+  modprobe sblkdev catalog="sblkdev1,2048;sblkdev2,4096"
+  ```
 
 * Unload
-	`modprobe -r sblkdev`
+  ```
+  modprobe -r sblkdev
+  ```
 
 * Uninstall module
-	`cd ${HOME}/sblkdev; ./mk.sh uninstall`
+  ```
+  cd ${HOME}/sblkdev; ./mk.sh uninstall
+  ```
 
 ---
 **Alternate: Steps to test:**
@@ -117,29 +136,26 @@ rpm:
 
 *< Now partition setup and format of the (pseudo) disk follows >*
 
-'fdisk /dev/sblkdev1' will now run..
+`fdisk /dev/sblkdev1` will now run.
 
 Apply these commands in this order:
 
-`n      : New partition`
-
-`p      : type Primary  [Enter]`
-
-`1      : partition # 1 [Enter]`
-
-`1      : First sector (1-2047, default 1): [Enter]`
-
-`4095   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-4095, default 4095): [Enter]`
-
-`w      : write partition table`
+```
+n      : New partition
+p      : type Primary  [Enter]
+1      : partition # 1 [Enter]
+1      : First sector (1-2047, default 1): [Enter]
+4095   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-4095, default 4095): [Enter]
+w      : write partition table
+```
 
 (*Tip:* Just pressing `[Enter]` typically has the correct defaults setup)
 
 It might now ask:
 
-"Found a dos partition table in /dev/sblkdev1
-
-Proceed anyway? (y,N) "
+> Found a dos partition table in /dev/sblkdev1
+>
+> Proceed anyway? (y,N)
 
 Type `y`
 
