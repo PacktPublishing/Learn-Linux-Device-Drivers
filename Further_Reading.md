@@ -127,6 +127,26 @@ Miscellaneous:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
+## Chapter 4, The Device Tree - Further Reading
+
+- PinMux
+    - [Pinmuxing Guide, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/pinmuxing-guide/)
+    - [Pinmuxing AM6X Based Modules, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/pinmuxing-guide/pinmuxing-with-am6x-based-modules/)
+    - BGA and TQFP packaging
+        - [What Is a BGA Chip? A Complete Guide to Ball Grid Array Packaging](https://jlcpcb.com/blog/bga-chip-explained)
+        - [10 Reasons Why I Love the BGA](https://www.sigcon.com/Pubs/straight/bga.htm)
+        - [TQFP Package Explained: Dimensions, Pin Pitch, PCB Design & Comparisons](https://jlcpcb.com/blog/tqfp-package-explained)
+- []()
+- DT Overlays
+    - [How to Write Device Tree Overlays, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/how-to-write-device-tree-overlays/)
+    - []()
+- TI SysConfig tool
+    - [Download](https://www.ti.com/tool/SYSCONFIG#downloads)
+    - [Getting started with Sysconfig Tool (HTML)](https://www.ti.com/document-viewer/lit/html/sdaa194)
+    - [TI SysConfig Deep Dive: Generating Pin and Peripheral Configurations](https://hubble.com/community/guides/ti-sysconfig-deep-dive-generating-pin-and-peripheral-configurations/)
+
+
+
 ## Chapter 8, Writing a PCIe skeleton driver - Further Reading
 
 - [PCI SIG - Special Interest Group](https://pcisig.com/specifications) - PCI standards documents, etc
@@ -205,13 +225,14 @@ Miscellaneous:
 - [Approaches to Keylogging perhaps? IMP NOTE: to Only be used ethically!]
     - [See a conversation with claude.ai on this topic](https://claude.ai/share/e8d09c7e-2e38-4297-b39d-5f12117bd1fe)
     - [kernel doc: get called back on keyboard events! Keylogger like?](https://docs.kernel.org/input/notifier.html)
-- []()
+
+
 - []()
 - []()
 
 ...
 
-## Chapter 11, Writing a modern Block device driver - Further Reading
+## Chapter 11, Writing a modern Block Driver, Part 1 – the Linux Storage Stack - Further Reading
 - [Cylinder-head-sector, Wikipedia](https://en.wikipedia.org/wiki/Cylinder-head-sector)
 - [Logical block addressing, Wikipedia](https://en.wikipedia.org/wiki/Logical_block_addressing)
 - [Managed Flash Background Operations Series; Part 5: Understanding Logical Block Address to Physical Block Address Translation in NAND Flash Memory](https://americas.kioxia.com/content/dam/kioxia/en-us/business/memory/mlc-nand/asset/KIOXIA_Managed_Flash_BOS_P5_Understanding_L2P_Block_Address_Translation_Tech_Brief.pdf)
@@ -233,6 +254,8 @@ Miscellaneous:
     - [Device Mapper Multipath, an Introduction, Oracle blog, Aug 2024](https://blogs.oracle.com/linux/device-mapper-multipath-an-introduction)
     - [Configuring and managing Device Mapper Multipath, RedHat RHEL7](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html-single/dm_multipath/index)
 
+
+## Chapter 12, Writing a modern Block Driver, Part 2 – the implementation - Further Reading
 - [Block Device Drivers; excellent](https://linux-kernel-labs.github.io/refs/heads/master/labs/block_device_drivers.html#block-device-drivers)
 - [Block - official kernel docs](https://www.kernel.org/doc/html/v6.18/block/index.html)
     - [Multi-Queue Block IO Queueing Mechanism (blk-mq) for 6.18](https://www.kernel.org/doc/html/v6.18/block/blk-mq.html)
@@ -249,6 +272,13 @@ Miscellaneous:
 
 - [Did you know that userspace block drivers are possible too!? 'Userspace block device driver (ublk driver)
 ' - official kernel doc](https://www.kernel.org/doc/html/latest/block/ublk.html)
+
+
+## Chapter 13, Writing a USB Device Driver
+- [Writing USB Device Drivers - the official kernel doc for a USB 'skeleton' driver](https://docs.kernel.org/driver-api/usb/writing_usb_driver.html)
+- []()
+- []()
+- []()
 
 
 [End Doc]
