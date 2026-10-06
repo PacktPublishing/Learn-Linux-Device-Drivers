@@ -214,7 +214,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, -ENOMEM, "failed at devm_input_allocate_device()\n");
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
-	pushb->input->phys = "pushbtn_simple/input0";
+	pushb->input->phys = "pushbtn/input0";
 
 	/* Which input events this device supports; as a best-practice, we
 	 * don't hard-code it in the driver; instead, we define it in the
@@ -252,7 +252,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	ret = devm_request_threaded_irq(&pdev->dev, pushb->irq,
 					NULL, key_irq_handler,
 					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
-					"pushbtn-simple", pushb);
+					"pushbtn", pushb);
 	if (ret)
 		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
 
@@ -284,8 +284,13 @@ static const struct of_device_id my_of_ids[] = {
 	 * This is especially important: it MUST EXACTLY match the 'compatible'
 	 * property in the DT; *even a mismatched space will cause the match to
 	 * fail* !
+	 * Well, there's more to this; in reality, the kernel's platform_match() tries
+	 * in this order: first driver_override, then OF, then ACPI, then id_table, and
+	 * only then name matching as the last fallback. With our
+	 * pushbtn_platform_input_driver->of_match_table set, the compatible string is
+	 * what takes effect.
 	 */
-	{.compatible = "lddia,pushbtn_simple"},
+	{.compatible = "lddia,pushbtn"},
 	{},
 };
 
@@ -296,7 +301,7 @@ static struct platform_driver pushbtn_platform_input_driver = {
 	.probe = input_pushbtn_platdev_probe,
 	.remove = input_pushbtn_platdev_remove,
 	.driver = {
-		   .name = "pushbtn_simple",
+		   .name = "pushbtn",
 		   /* platform driver name must
 		    * EXACTLY match the DT 'compatible' property 'model' name
 		    * - described in the DT [overlay] for the board - for
@@ -307,7 +312,7 @@ static struct platform_driver pushbtn_platform_input_driver = {
 		   .of_match_table = of_match_ptr(my_of_ids),
 #endif
 		   .owner = THIS_MODULE,
-		   },
+	},
 };
 
 module_platform_driver(pushbtn_platform_input_driver);

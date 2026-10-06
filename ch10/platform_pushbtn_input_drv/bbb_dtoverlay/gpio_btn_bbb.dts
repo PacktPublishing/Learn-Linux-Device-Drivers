@@ -64,7 +64,10 @@
 &{/} {
         /* Create a (pseudo) on-chip peripheral (ocp) named 'pushbtn-device' */
         pushbtn-device {
-		compatible = "lddia,pushbtn_simple";
+		compatible = "lddia,pushbtn"; /* Strictly - if upstreaming - this would
+					       * require a new DT binding (as the 'vendor'
+					       * named 'lddia' is new
+					       */
 		label = "demo pushbtn device";
 		keyval = <KEY_ENTER>;
 		//keyval = <KEY_ASSISTANT>;

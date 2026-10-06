@@ -7,8 +7,9 @@ set -euo pipefail
 
 KPFX=~/6.18.33  # location of kernel src tree; ADJUST this for your setup
 
-echo "cp gpio_btn_bbb.dtso ${KPFX}/arch/arm/boot/dts/ti/omap/"
-cp gpio_btn_bbb.dtso ${KPFX}/arch/arm/boot/dts/ti/omap/
+# Kernel Makefile looks for .dts only (not .dtso !)
+echo "cp gpio_btn_bbb.dts ${KPFX}/arch/arm/boot/dts/ti/omap/"
+cp gpio_btn_bbb.dts ${KPFX}/arch/arm/boot/dts/ti/omap/
 
 echo "
 Now head over to ${KPFX}, build the DTB:
