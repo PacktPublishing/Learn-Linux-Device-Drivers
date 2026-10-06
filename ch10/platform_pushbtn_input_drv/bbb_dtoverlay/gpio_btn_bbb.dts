@@ -12,7 +12,7 @@
 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/am33xx.h>
-#include "../../../../../../include/uapi/linux/input-event-codes.h"
+#include <dt-bindings/input/input.h>  // KEY_*, BTN_* defs
 #include <dt-bindings/interrupt-controller/irq.h>
 
 /*
@@ -109,9 +109,11 @@
 		/* FYI: we could use these properties to describe the interrupt model:
 		 *	interrupt-parent = <&gpio1>;
 		 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
-		 * However, this  impedes the ability to use the devm_gpiod_get() etc in
-		 * the driver! So, we don't do this; instead, in the driver, we employ the
-		 * devm_gpiod_get() and gpiod_to_irq() routines to fetch the allocated IRQ line.
+ 	         * These can coexist with pushbtn-gpios. Only if they *replaced*
+		 * the pushbtn-gpios property would the driver lose devm_gpiod_get(), and
+		 * with it the ability to read the line's state. We don't add them: the IRQ
+		 * is the GPIO line's own interrupt, which the driver gets via
+		 * gpiod_to_irq(). So even the lddia,pushbtn binding doesn't define them.
 		 */
 		status = "okay";
 	};
