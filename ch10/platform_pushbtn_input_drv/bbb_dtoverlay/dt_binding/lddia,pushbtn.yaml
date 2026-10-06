@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/input/lddia,pushbtn.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: LDDIA GPIO Pushbutton (demo)
+
+maintainers:
+  - Kaiwan <kaiwan@wherever.com>
+
+description:
+  The device is a simple pushbutton wired to a single GPIO line. Each press and
+  release is reported as an input key event. The interrupt comes from the GPIO
+  line itself (via the GPIO controller), so the node has no interrupts property.
+  LDDIA is the demo vendor prefix used by the book "Linux Device Drivers In
+  Action"; its not an actual registered vendor prefix.
+
+properties:
+  compatible:
+    const: lddia,pushbtn
+
+  keyval:
+    description:
+      Input event code (a KEY_* or BTN_* value from
+      dt-bindings/input/input.h) reported on press and release.
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+    maximum: 0x2ff
+
+  label: true
+
+  purpose:
+    description:
+      Free-form text describing the button's role. Informational only; it
+      does not affect operation.
+    $ref: /schemas/types.yaml#/definitions/string
+
+  pushbtn-gpios:
+    description:
+      GPIO line the pushbutton is wired to. Its interrupt signals both press
+      and release.
+    maxItems: 1
+
+required:
+  - compatible
+  - keyval
+  - pushbtn-gpios
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+    #include <dt-bindings/input/input.h>
+
+    button {
+        compatible = "lddia,pushbtn";
+        keyval = <KEY_ENTER>;
+        label = "demo pushbtn device";
+        purpose = "my launch button";
+        pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+    };
