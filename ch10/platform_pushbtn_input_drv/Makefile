@@ -158,9 +158,9 @@ ifeq (,$(shell which dtc))
 	$(error ERROR: install the DTC compiler first)
 endif
 	@echo -n "\e[1m\e[41m"
-	@echo "--- compiles the Device Tree Blob (DTB) from the DTS (ARM/PPC/Risc-V/etc) ---"
+	@echo "--- compiles the Device Tree Blob Overlay (DTBO) from the DTS (ARM/PPC/Risc-V/etc) ---"
 	@echo -n "\e[0m"
-	dtc -@ -I dts -O dtb -o $(FNAME_C).dtb $(FNAME_C).dts
+	dtc -@ -I dts -O dtbo -o $(FNAME_C).dtbo $(FNAME_C).dtso
 	# DTBO - Device Tree Blob Overlay
 nsdeps:
 	@echo -n "\e[1m\e[41m"
