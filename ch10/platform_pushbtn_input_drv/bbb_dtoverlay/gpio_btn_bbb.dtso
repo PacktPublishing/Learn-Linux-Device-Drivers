@@ -62,15 +62,17 @@
 };
 
 &{/} {
-        /* Create a (pseudo) on-chip peripheral (ocp) named 'pushbtn_device' */
-        pushbtn_device {
+        /* Create a (pseudo) on-chip peripheral (ocp) named 'pushbtn-device' */
+        pushbtn-device {
 		compatible = "lddia,pushbtn_simple";
 		label = "demo pushbtn device";
 		keyval = <KEY_ENTER>;
 		//keyval = <KEY_ASSISTANT>;
 				/* the actual input event key or button
 				 * emananted by our pushbutton */
-		purpose = "launch button";
+		purpose = "launch button"; /* Strictly - if upstreaming - shouldn't have an
+					    * unnecessary new property; we already have 'label'
+					    */
 		pinctrl-names = "default";
 		pinctrl-0 = <&pushbutton_pins>; /* link to the PinMux */
 
@@ -104,7 +106,7 @@
 		/* FYI: we could use these properties to describe the interrupt model:
 		 *	interrupt-parent = <&gpio1>;
 		 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
-		 * However, this  sacrifices the ability to use the devm_gpiod_get() etc in
+		 * However, this  impedes the ability to use the devm_gpiod_get() etc in
 		 * the driver! So, we don't do this; instead, in the driver, we employ the
 		 * devm_gpiod_get() and gpiod_to_irq() routines to fetch the allocated IRQ line.
 		 */
