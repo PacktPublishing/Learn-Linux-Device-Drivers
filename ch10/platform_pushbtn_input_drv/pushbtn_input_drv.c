@@ -182,8 +182,6 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		return dev_err_probe(dev, PTR_ERR(pushb->gpio),
 				     "Failed at devm_gpiod_get()\n");
 
-	debounce_setup(dev, pushb);
-
 	/* Map to IRQ line */
 	pushb->irq = gpiod_to_irq(pushb->gpio);
 	if (pushb->irq < 0)
@@ -197,6 +195,8 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	if (pushb->irq < 0)
 		return dev_err_probe(dev, pushb->irq, "failed to obtain the IRQ line\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
+
+	debounce_setup(dev, pushb);
 
 	/* Just fyi, let's retrieve the 'purpose' property by name */
 	if (pdev->dev.of_node) {
