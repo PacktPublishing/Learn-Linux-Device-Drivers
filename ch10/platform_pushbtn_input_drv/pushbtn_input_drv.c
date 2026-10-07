@@ -102,7 +102,8 @@ static int debounce_setup(struct device *dev, struct pushbtn_device *pushb)
 				 ret, pushb->sw_debounce_ms);
 	} else {
 		pushb->sw_debounce_ms = 0;
-		dev_info(dev, "HW debounce enabled (%u ms)\n", PUSHBTN_DEBOUNCE_MS);
+		dev_info(dev, "HW debounce enabled (%u ms)\n",
+			PUSHBTN_DEBOUNCE_MS);
 	}
 	return ret;
 }
@@ -116,22 +117,24 @@ static irqreturn_t key_irq_handler(int irq, void *dev_id)
 	/*
 	 * Software debounce fallback. Simply sleep for PUSHBTN_DEBOUNCE_MS ms.
 	 * This only takes effect if the HW debounce doesn't work out.
-	 * Next, we're running in an IRQ thread, so we can sleep here. Even
+	 * Also, we're running in an IRQ thread, so we can sleep here. Even
 	 * better: the IRQF_ONESHOT keeps the IRQ line masked for the whole
 	 * duration of this thread func - so any bounce burst is swallowed
-	 * while we sleep, and on waking we read the line's *settled* state.
+	 * while we sleep, and on waking we read the line's settled state.
 	 */
 	if (pushb->sw_debounce_ms)
 		msleep(pushb->sw_debounce_ms);
 
-	/* Read the current GPIO (in effect, pushbutton) state
-	 * Imp to realize that this can only work via the devm_gpiod_get() approach;
-	 * it can't work if we used the 'interrupt*'-only properties in the DT overlay.
+	/*
+	 * Read the current GPIO (in effect, pushbutton) state
+	 * Imp to realize that this can only work via the devm_gpiod_get()
+	 * approach; it can't work if we used the 'interrupt*'-only
+	 * properties in the DT overlay.
 	 * Also, we're in a threaded handler, so using the blocking ver is fine.
 	 */
 	state = gpiod_get_value_cansleep(pushb->gpio);
 	/*
-	 * Alternately, we can also do so in a non-blocking manner with
+	 * Above: alternately, we can also do so in a non-blocking manner with
 	 *  state = gpiod_get_value(pushb->gpio);
 	 */
 	dev_dbg(dev, "irq:count=%u:btn-state=%d\n",
@@ -150,7 +153,7 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 {
 	struct pushbtn_device *pushb;
 	struct device *dev = &pdev->dev;
-	const struct of_device_id *match;	// security: explicit match validation
+	const struct of_device_id *match; // security: explicit match validation
 	const char *prop = NULL;
 	int len = 0, ret;
 
@@ -176,6 +179,10 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 *  ...
 	 *      pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
 	 * ref: https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/bindings/gpio/gpio.txt
+	 *
+	 * Read the IRQ handler comment to see why we prefer this approach.
+	 * Essentially- without the GPIO Descriptor, we can't read the line
+	 * state!
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
@@ -187,13 +194,15 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	if (pushb->irq < 0)
 		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
 #else
-	/* Do it this way if we specified the IRQ line via the interrupt_parent = ...
-	 * and interrupts = ... properties in the DT
+	/* Do it this way if, in the DT, we specified the IRQ line via:
+	 *	interrupt-parent = <&gpio1>;
+	 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
 	 */
 	pushb->irq = platform_get_irq(pdev, 0);
 #endif
 	if (pushb->irq < 0)
-		return dev_err_probe(dev, pushb->irq, "failed to obtain the IRQ line\n");
+		return dev_err_probe(dev, pushb->irq,
+			"failed to obtain the IRQ line\n");
 	dev_info(dev, "GPIO line mapped to IRQ line %d\n", pushb->irq);
 
 	debounce_setup(dev, pushb);
@@ -204,14 +213,16 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 		if (!prop)
 			dev_warn(dev, "getting DT property 'purpose' failed\n");
 		else
-			dev_info(dev, "DT property 'purpose' = \"%s\" (len=%d)\n", prop, len);
+			dev_info(dev,
+			"DT property 'purpose' = \"%s\" (len=%d)\n", prop, len);
 	} else
 		dev_warn(dev, "couldn't access DT 'purpose' node\n");
 
 	/* Setup as an input device */
 	pushb->input = devm_input_allocate_device(&pdev->dev);
 	if (!pushb->input)
-		return dev_err_probe(dev, -ENOMEM, "failed at devm_input_allocate_device()\n");
+		return dev_err_probe(dev, -ENOMEM,
+			"failed at devm_input_allocate_device()\n");
 
 	pushb->input->name = "LDDIA: GPIO PushButton";
 	pushb->input->phys = "pushbtn/input0";
@@ -227,11 +238,11 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	ret = of_property_read_s32(pdev->dev.of_node, "keyval", &pushb->keyval);
 	if (ret < 0)
 		return dev_err_probe(dev, ret,
-				     "failed at of_property_read_s32() fetching keyval from DT\n");
+		"failed at of_property_read_s32() fetching keyval from DT\n");
 	if (pushb->keyval <= 0 || pushb->keyval > KEY_MAX)
 		return dev_err_probe(dev, -EINVAL,
-				     "invalid DT keyval %d [valid range is 1..%d]\n",
-				     pushb->keyval, KEY_MAX);
+			     "invalid DT keyval %d [valid range is 1..%d]\n",
+			     pushb->keyval, KEY_MAX);
 	dev_dbg(dev, "DT property 'keyval' = %d\n", pushb->keyval);
 	// Now set the capability bits
 	input_set_capability(pushb->input, EV_KEY, pushb->keyval);
@@ -239,7 +250,8 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	/* Register input device */
 	ret = input_register_device(pushb->input);
 	if (ret)
-		return dev_err_probe(dev, ret, "failed at input_register_device()\n");
+		return dev_err_probe(dev, ret,
+			"failed at input_register_device()\n");
 	platform_set_drvdata(pdev, pushb);
 	atomic_set(&pushb->irqcount, 0);
 
@@ -254,7 +266,8 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 					IRQ_TYPE_EDGE_BOTH | IRQF_ONESHOT,
 					"pushbtn", pushb);
 	if (ret)
-		return dev_err_probe(dev, ret, "failed at devm_request_threaded_irq()\n");
+		return dev_err_probe(dev, ret,
+			"failed at devm_request_threaded_irq()\n");
 
 	return 0;
 }
@@ -280,15 +293,15 @@ void input_pushbtn_platdev_remove(struct platform_device *pdev)
 static const struct of_device_id my_of_ids[] = {
 	/*
 	 * DT compatible property syntax: <manufacturer,model> ...
-	 * Can have multiple pairs of <oem,model>, from most specific to most general.
-	 * This is especially important: it MUST EXACTLY match the 'compatible'
-	 * property in the DT; *even a mismatched space will cause the match to
-	 * fail* !
-	 * Well, there's more to this; in reality, the kernel's platform_match() tries
-	 * in this order: first driver_override, then OF, then ACPI, then id_table, and
-	 * only then name matching as the last fallback. With our
-	 * pushbtn_platform_input_driver->of_match_table set, the compatible string is
-	 * what takes effect.
+	 * Can have multiple pairs of <oem,model>, from most specific to most
+	 * general. This is especially important: it MUST EXACTLY match the
+	 * 'compatible' property in the DT; *even a mismatched space will cause
+	 * the match to fail* !
+	 * Well, there's more to this; in reality, the kernel's platform_match()
+	 * tries in this order: first driver_override, then OF, then ACPI, then
+	 * id_table, and only then name matching as the last fallback. With our
+	 * pushbtn_platform_input_driver of_match_table member being set, the
+	 * compatible string is what takes effect.
 	 */
 	{.compatible = "lddia,pushbtn"},
 	{},
