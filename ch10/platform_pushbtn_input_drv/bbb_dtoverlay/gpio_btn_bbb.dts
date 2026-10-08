@@ -66,7 +66,8 @@
         pushbtn-device {
 		compatible = "lddia,pushbtn"; /* Strictly - if upstreaming - this would
 					       * require a new DT binding (as the 'vendor'
-					       * named 'lddia' is new
+					       * named 'lddia' is new; or at least an
+					       * entry in the trivial-devices.yaml file
 					       */
 		label = "demo pushbtn device";
 		keyval = <KEY_ENTER>;
