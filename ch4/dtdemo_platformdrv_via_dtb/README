@@ -1,0 +1,55 @@
+1. For the TI Beagle BoneBlack (BBB) board:
+
+ 1. Setup the DTBO to get parsed at boot:
+    - Can boot from either the eMMC internal flash or the uSD card.. but then must
+      accordingly supply the correct pathnames for the DTBO file of course; here
+      we assume we're booting off the microSD card.
+    - Compile the DTS (in bbb_dtb_stuff/) to the DTBO (DT overlay blob)
+    - Copy it into the appropriate location; on the internal flash it's:
+        /boot/dtbs/$(uname -r)/overlays/BBB-DTDEMO.dtbo
+    - Insert this line into /boot/uEnv.txt to enable our DTBO to get loaded up on boot:
+       dtb_overlay=/boot/dtbs/$(uname -r)/overlays/BBB-DTDEMO.dtbo
+       (OR into any of uboot_overlay_addr1=..., uboot_overlay_addr2=..., ...,
+          uboot_overlay_addr7=... )
+    - save and reboot the board.
+
+ 2. Use a terminal emulator (like minicom, etc); U-Boot prints should show that
+    our DTBO got loaded:
+	...
+	Checking for: /boot/uEnv.txt ...
+	gpio: pin 55 (gpio 55) value is 1
+	2669 bytes read in 3 ms (868.2 KiB/s)
+	Loaded environment from /boot/uEnv.txt
+	...
+	loading /boot/vmlinuz-6.18.39-bone44 ...
+	9138688 bytes read in 577 ms (15.1 MiB/s)
+	debug: [enable_uboot_overlays=1] ...
+	...
+	uboot_overlays: [fdt_buffer=0x60000] ...
+	uboot_overlays: loading /boot/dtbs/6.18.39-bone44/overlays/BB-ADC-00A0.dtbo ...
+	645 bytes read in 8 ms (78.1 KiB/s)
+	uboot_overlays: loading /boot/dtbs/6.18.39-bone44/overlays/BBB-DTDEMO.dtbo ...
+	492 bytes read in 9 ms (52.7 KiB/s)
+	...
+
+    After getting a shell:
+    $ cat /proc/device-tree/my_device/compatible
+dtdemo,dtdemo_platdev
+ 4. Compile and run the driver; the probe method gets called, proving it worked!
+    make && sudo insmod ./dtdemo_platdrv.ko
+    dmesg
+    ...
+    [  185.450304] dtdemo_platdrv:dtdemo_platdrv_init(): inserted
+    [  185.450591] dtdemo_platdev my_device: platform driver probe enter
+    [  185.450612] dtdemo_platdev my_device: DT property 'aproperty' = my prop 1 (len=10)
+
+
+2. For the Raspberry Pi 4B board:
+
+- Compile the dtdemo_platdrv module
+- Run the helper script dtb_gen_rpi onboard ... it generates the original DTS,
+  validates the (already existing) rpi4b_dtb_stuff/rpi4b_gen_dtdemo.dts DTS and
+  then builds the new DTB, copies it into /boot, sets up to use it (via /boot/config.txt).
+  Follow the steps and it should just work
+
+Done!

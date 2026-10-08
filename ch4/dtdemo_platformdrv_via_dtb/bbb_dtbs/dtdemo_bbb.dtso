@@ -1,0 +1,25 @@
+/*
+ * DT overlay for the dtdemo platform device and driver
+ * This one is for the Beagle BoneBlack (BBB) board
+ */
+/dts-v1/;
+/plugin/;
+
+/*
+ * Helper to show loaded overlays under: /proc/device-tree/chosen/overlays/
+ */
+&{/chosen} {
+	overlays {
+		DTOVERLAY-DEMO.kernel = "Wed Sep 16 09:30:00 2026";
+	};
+};
+
+&{/} {
+	/* Create a (pseudo) device under / named 'my_device' */
+	my_device {
+		compatible = "dtdemo,dtdemo_platdev";
+		aproperty = "my prop 1";
+		my_value = <162009>;
+		status = "okay";
+	};
+};
