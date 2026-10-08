@@ -106,14 +106,12 @@
 		 *   https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/bindings/gpio/gpio.txt
 		 */
 
-		/* FYI: we could use these properties to describe the interrupt model:
-		 *	interrupt-parent = <&gpio1>;
-		 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
- 	         * These can coexist with pushbtn-gpios. Only if they *replaced*
+		/* We use these interrupt-* properties to describe the interrupt model: */
+		 	interrupt-parent = <&gpio1>;
+		 	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
+		/* These can coexist with pushbtn-gpios. Only if they *replaced*
 		 * the pushbtn-gpios property would the driver lose devm_gpiod_get(), and
-		 * with it the ability to read the line's state. We don't add them: the IRQ
-		 * is the GPIO line's own interrupt, which the driver gets via
-		 * gpiod_to_irq(). So even the lddia,pushbtn binding doesn't define them.
+		 * with it the ability to read the line's state.
 		 */
 		status = "okay";
 	};

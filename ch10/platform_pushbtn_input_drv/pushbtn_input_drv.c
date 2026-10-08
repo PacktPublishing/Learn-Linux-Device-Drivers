@@ -172,32 +172,27 @@ int input_pushbtn_platdev_probe(struct platform_device *pdev)
 	 * addresses, interrupt numbers and other device-specific information
 	 */
 
-#if 1
 	/* Get GPIO descriptor from device tree
 	 *  property name before -gpios is what you use in devm_gpiod_get()
 	 *  DT:
 	 *  ...
 	 *      pushbtn-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
 	 * ref: https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/bindings/gpio/gpio.txt
-	 *
-	 * Read the IRQ handler comment to see why we prefer this approach.
-	 * Essentially- without the GPIO Descriptor, we can't read the line
-	 * state!
 	 */
 	pushb->gpio = devm_gpiod_get(&pdev->dev, "pushbtn", GPIOD_IN);
 	if (IS_ERR(pushb->gpio))
 		return dev_err_probe(dev, PTR_ERR(pushb->gpio),
 				     "Failed at devm_gpiod_get()\n");
 
-	/* Map to IRQ line */
-	pushb->irq = gpiod_to_irq(pushb->gpio);
-	if (pushb->irq < 0)
-		return dev_err_probe(dev, pushb->irq, "failed at gpiod_to_irq()\n");
-#else
-	/* Do it this way if, in the DT, we specified the IRQ line via:
-	 *	interrupt-parent = <&gpio1>;
-	 *	interrupts = <17 IRQ_TYPE_EDGE_BOTH>;
+	/*
+	 * We can map to IRQ line either via the gpiod_to_irq() approach OR, by
+	 * employing the platform_get_irq(). Here we do the latter... as in
+	 * the DT, we specified the IRQ line via the interrupt-* properties,
+	 * plus it's just simpler.
 	 */
+#if 0
+	pushb->irq = gpiod_to_irq(pushb->gpio);
+#else
 	pushb->irq = platform_get_irq(pdev, 0);
 #endif
 	if (pushb->irq < 0)
