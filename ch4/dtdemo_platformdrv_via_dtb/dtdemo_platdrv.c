@@ -15,8 +15,9 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/version.h>
-#include <linux/of.h>		// of_* APIs (OF = Open Firmware)
+#include <linux/of.h>   // of_* APIs (OF = Open Firmware)
 #include <linux/of_device.h>
+#include <linux/property.h>  // device_property_*()
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
@@ -28,10 +29,10 @@ static const struct of_device_id my_of_ids[];
 static int dtdemo_platdev_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	const struct of_device_id *match;	// security: explicit match validation
-	const char *prop = NULL;
-	s32 myval;
-	int len = 0;
+	const struct of_device_id *match; // security: explicit match validation
+	const char *propstr;
+	u32 myval;
+	int ret;
 
 	dev_dbg(dev, "platform driver probe enter\n");
 
@@ -41,16 +42,14 @@ static int dtdemo_platdev_probe(struct platform_device *pdev)
 
 	/*  So, let's retrieve the property of the node by name, 'aproperty' */
 	if (pdev->dev.of_node) {
-		prop = of_get_property(pdev->dev.of_node, "aproperty", &len);
-		if (!prop)
+		ret = device_property_read_string(dev, "aproperty", &propstr);
+		if (ret)
 			dev_warn(dev, "getting DT property 'aproperty' failed\n");
 		else
-			dev_info(dev, "DT property 'aproperty' = \"%s\" (len=%d)\n", prop,
-				 len);
+			dev_info(dev, "DT property 'aproperty' = \"%s\"\n", propstr);
 
-		// Note that the ret value isn't the property value..(the 3rd param is)
-		len = of_property_read_s32(pdev->dev.of_node, "my_value", &myval);
-		if (len < 0)
+		ret = device_property_read_u32(dev, "my_value", &myval);
+		if (ret < 0)
 			dev_warn(dev, "getting DT property 'my_value' failed\n");
 		else
 			dev_info(dev, "DT property 'my_value' = %d\n", myval);
