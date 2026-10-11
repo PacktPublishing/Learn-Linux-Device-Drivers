@@ -129,17 +129,34 @@ Miscellaneous:
 
 ## Chapter 4, The Device Tree - Further Reading
 
+- Device Tree
+    - [Linux and the Devicetree, Grant Likely, official kernel doc](https://docs.kernel.org/devicetree/usage-model.html)
+    - [About the Device Tree, ofitself (PDF)](http://www.ofitselfso.com/BeagleNotes/AboutTheDeviceTree.pdf)
+    - [Device Tree Mysteries, eLinux](https://elinux.org/Device_Tree_Mysteries#)
+    - [Device Tree Technical Overview, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/device-tree-overview/)
+    - [Devicetree Specifications](https://www.devicetree.org/specifications/)
+        - [Devicetree Specification, latest as of this writing: Release v0.4  - Released Wednesday, June 28, 2023](https://github.com/devicetree-org/devicetree-specification/releases/download/v0.4/devicetree-specification-v0.4.pdf)
+    - [Device Trees for Dummies, Thomas Pettazoni, Bootlin](https://bootlin.com/pub/conferences/2013/elce/petazzoni-device-tree-dummies/petazzoni-device-tree-dummies.pdf)
+    - [How (the) linux device tree operate(s), G Chakraborty, LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7448733399097294848/)
+
+- ACPI
+    - [ACPI vs. Device Tree: The Linux Approach to Hardware Description, Tushar V](https://www.linkedin.com/pulse/acpi-vs-device-tree-linux-approach-hardware-tushar-vyavahare-cbxac/)
+    - [Linux Device Configuration Mechanisms - ACPI vs Device Tree | Linux kernel and Linux device driver, YouTube](https://www.youtube.com/watch?v=UIXtM1IlnG4)
+- []()
+- []()
+- DT Overlays
+    - [Using Device Tree Overlays, example on BeagleBone boards, Michael Opdenacker, Feb 2022](https://bootlin.com/blog/using-device-tree-overlays-example-on-beaglebone-boards/)
+    - [How to Write Device Tree Overlays, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/how-to-write-device-tree-overlays/)
+    - [Official kernel doc - Devicetree Overlay Notes](https://elixir.bootlin.com/linux/v6.18.33/source/Documentation/devicetree/overlay-notes.rst)
 - PinMux
     - [Pinmuxing Guide, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/pinmuxing-guide/)
     - [Pinmuxing AM6X Based Modules, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/pinmuxing-guide/pinmuxing-with-am6x-based-modules/)
-    - BGA and TQFP packaging
+    - SoC packaging: BGA and TQFP
         - [What Is a BGA Chip? A Complete Guide to Ball Grid Array Packaging](https://jlcpcb.com/blog/bga-chip-explained)
         - [10 Reasons Why I Love the BGA](https://www.sigcon.com/Pubs/straight/bga.htm)
         - [TQFP Package Explained: Dimensions, Pin Pitch, PCB Design & Comparisons](https://jlcpcb.com/blog/tqfp-package-explained)
 - []()
-- DT Overlays
-    - [How to Write Device Tree Overlays, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/how-to-write-device-tree-overlays/)
-    - []()
+
 - TI SysConfig tool
     - [Download](https://www.ti.com/tool/SYSCONFIG#downloads)
     - [Getting started with Sysconfig Tool (HTML)](https://www.ti.com/document-viewer/lit/html/sdaa194)
