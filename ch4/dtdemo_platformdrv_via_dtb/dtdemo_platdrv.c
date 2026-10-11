@@ -8,7 +8,7 @@
  *    displayed in here, the platform driver!
  *
  * Kaiwan N Billimoria, kaiwanTECH
- * License: DUal MIT/GPL
+ * License: Dual MIT/GPL
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
@@ -21,8 +21,10 @@
 
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("Kaiwan N Billimoria");
-MODULE_DESCRIPTION
-	("Demo: setting up a DT node, so that this demo platform driver can get bound");
+MODULE_DESCRIPTION(
+"Demo of a simple DTB Overlay and device driver pair; they get bound"
+" due to compatible string match");
+//setting up a DT node, so that this demo platform driver can get bound");
 
 static const struct of_device_id my_of_ids[];
 
@@ -85,20 +87,14 @@ static void dtdemo_platdev_remove(struct platform_device *pdev)
 static const struct of_device_id my_of_ids[] = {
 	/*
 	 * DT compatible property syntax: <manufacturer,model> ...
-	 * Can have multiple pairs of <oem,model>, from most specific to most general.
-	 * This is especially important: it MUST EXACTLY match the 'compatible'
-	 * property in the DT; *even a mismatched space will cause the match to
-	 * fail* !
-	 * Well, there's more to this; in reality, the kernel's platform_match()
-	 * tries in this order: first driver_override, then OF, then ACPI, then
-	 * id_table, and only then name matching as the last fallback. With our
-	 * my_platform_driver of_match_table member being set, the
-	 * compatible string is what takes effect.
+	 * Can have multiple pairs of <oem,model>, going from most specific
+	 * to most general.
+	 * The key point: the compatible property matches (pairs) the driver to
+	 * the Device Tree.
 	 */
-	{.compatible = "lddia,dtdemo_platdev"},
+	{ .compatible = "lddia,dtdemo_platdev"},
 	{},
 };
-
 MODULE_DEVICE_TABLE(of, my_of_ids);
 #endif
 
@@ -106,14 +102,25 @@ static struct platform_driver my_platform_driver = {
 	.probe = dtdemo_platdev_probe,
 	.remove = dtdemo_platdev_remove,
 	.driver = {
-		   .name = "dtdemo_platdev",
-		   /* platform driver name; can be overriden (by .driver_override),
-		    * OF, ACPI, id_table, and then this .name is checked.
-		    */
+		.name = "dtdemo_platdev",
+	/* platform driver name must EXACTLY match the DT 'compatible'
+	 * property - described in the DT [overlay] for the board in
+	 * order for binding to occur; then, if installed, this module
+	 * will be auto-loaded at boot and it's probe method invoked!
+	 * This is especially important: it MUST EXACTLY match the 'compatible'
+	 * property in the DT; *even a mismatched space will cause the match to
+	 * fail* !
+	 * Well, there's more to this; in reality, the kernel's platform_match()
+	 * tries in this order: first driver_override, then OF, then ACPI, then
+	 * id_table, and only then name matching as the last fallback.
+	 * KEY POINT: With our my_platform_driver structure's of_match_table
+	 * nested member being set (just below), the compatible string is what
+	 * takes effect.
+	 */
 #ifdef CONFIG_OF
-		   .of_match_table = my_of_ids,
+		.of_match_table = my_of_ids,
 #endif
-		   .owner = THIS_MODULE,
+		.owner = THIS_MODULE,
 	}
 };
 
@@ -137,15 +144,13 @@ static int dtdemo_platdrv_init(void)
 		pr_err("platform value returned %d\n", ret_val);
 		return ret_val;
 	}
-	return 0;		/* success */
+	return 0;	/* success */
 }
-
 static void dtdemo_platdrv_cleanup(void)
 {
 	platform_driver_unregister(&my_platform_driver);
 	pr_info("removed\n");
 }
-
 module_init(dtdemo_platdrv_init);
 module_exit(dtdemo_platdrv_cleanup);
 #endif
