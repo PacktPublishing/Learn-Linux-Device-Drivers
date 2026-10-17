@@ -2,12 +2,13 @@
 
 show_disk_detail()
 {
-    local DEV=${1} hctx
+    local DEV=${1} hctx qdepth
     printf "# hctx's    (nr_hw_queues)  : %4d\n" $(ls /sys/block/${DEV}/mq/ | wc -w)
-    printf "queue depth (nr_tags)       : %4d\n" $(cat /sys/block/${DEV}/mq/0/nr_tags)
+    qdepth=$(cat /sys/block/${DEV}/mq/0/nr_tags)
+    qdepth=$((qdepth+1)) # for the Admin Queue pair
+    printf "queue depth (nr_tags)       : %4d\n" ${qdepth}
     printf "hctx#     nr_tags     CPU affinity list\n"
     for hctx in /sys/block/${DEV}/mq/*/; do
-        #echo ">>> hctx = $hctx"
         printf "%4s  %9s   " $(basename ${hctx}) $(cat ${hctx}/nr_tags) 
         echo "      $(cat ${hctx}/cpu_list)"
     done
