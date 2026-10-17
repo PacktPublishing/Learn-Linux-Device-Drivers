@@ -15,7 +15,8 @@ show_disk_detail()
 }
 
 #--- 'main' ---
-for DEV in $(ls /sys/block/ | grep -E 'nvme|sd|sblkdev'); do
+#for DEV in $(ls /sys/block/ | grep -E 'nvme|sd|sblkdev'); do
+for DEV in $(\ls /sys/block/ | grep -v 'loop'); do
     echo "---------------------------------------"
     echo "Device: ${DEV}"
     echo "---------------------------------------"
