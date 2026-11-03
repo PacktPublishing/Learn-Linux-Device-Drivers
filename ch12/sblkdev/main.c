@@ -138,9 +138,9 @@ static int __init sblkdev_init(void)
 	}
 	kfree(catalog);
 
-	pr_info("registered\n");
 	if (ret == 0)
-		return 0;
+		pr_info("registered\n");
+	return 0;
 
 fail_unregister:
 	unregister_blkdev(sblkdev_major, KBUILD_MODNAME);
