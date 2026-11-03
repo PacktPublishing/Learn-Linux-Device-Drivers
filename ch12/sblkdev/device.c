@@ -96,10 +96,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 #endif
 
 	blk_mq_start_request(rq);
-
-	if (process_request(rq, &nr_bytes))
-		status = BLK_STS_IOERR;
-
+	status = process_request(rq, &nr_bytes); // returns blk_status_t
 	blk_mq_end_request(rq, status);
 	/* Now the rq belongs to blk-mq again, so don't touch */
 
@@ -108,7 +105,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	if (status)
 		dev_warn(dev, "request failed!\n");
 
-	return status;
+	return BLK_STS_OK;
 }
 
 static struct blk_mq_ops mq_ops = {
