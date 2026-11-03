@@ -7,6 +7,17 @@
 #include <linux/blk-mq.h>
 #include <linux/blkdev.h>
 #include "device.h"
+/*
+ * Logical == physical block size. In-tree builds get it from Kconfig;
+ * standalone builds may add -DCONFIG_SBLKDEV_BLOCK_SIZE=N (within
+ * Makefile-standalone).
+ * Must be a power of 2 in the range [512, PAGE_SIZE] (checked at build time)
+ */
+#ifdef CONFIG_SBLKDEV_BLOCK_SIZE
+#define SBLKDEV_BLOCK_SIZE	CONFIG_SBLKDEV_BLOCK_SIZE
+#else
+#define SBLKDEV_BLOCK_SIZE	SECTOR_SIZE
+#endif
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 
@@ -398,6 +409,15 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	struct sblkdev_device *dev = NULL;
 	int ret = 0;
 	struct gendisk *disk;
+	struct queue_limits lim = {
+		.logical_block_size  = SECTOR_SIZE, // 512 bytes
+		.physical_block_size = SBLKDEV_BLOCK_SIZE,
+		.io_min              = SBLKDEV_BLOCK_SIZE,
+	};
+
+	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE < SECTOR_SIZE ||
+		     SBLKDEV_BLOCK_SIZE > PAGE_SIZE);
+	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE & (SBLKDEV_BLOCK_SIZE - 1));
 
 	//--- Block driver init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
@@ -434,7 +454,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
      * If < 5.14 (HAVE_BLK_MQ_ALLOC_DISK undefined); we have our own
 	 * implementation of this func, my_blk_mq_alloc_disk()
 	 */
-	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
+	disk = blk_mq_alloc_disk(&dev->tag_set, &lim, dev);
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
 		pr_err("Failed to allocate disk (1)\n");
@@ -489,17 +509,13 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
 	set_capacity(disk, dev->capacity);
 
-#ifdef CONFIG_SBLKDEV_BLOCK_SIZE
-	// true: set to 512
-	blk_queue_physical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
-	blk_queue_logical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
-	blk_queue_io_min(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
-	blk_queue_io_opt(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
-#else
+#ifndef CONFIG_SBLKDEV_BLOCK_SIZE
+	/* value set to 512 by default (but can be overriden in
+	 * Makefile-standalone) */
 	queue_physical_block_size(disk->queue);
-	//blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);  // not on 6.14?
 	queue_logical_block_size(disk->queue);
-	//blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);   // not on 6.14?
+	queue_io_min(disk->queue);
+	queue_io_opt(disk->queue);
 #endif
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
