@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0
+/*
+ * One sblkdev 'disk': this source includes the disk setup/teardown, the
+ * blk-mq data path (queue_rq) and the block_device_operations (control path).
+ */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-#include <linux/hdreg.h> /* for HDIO_GETGEO */
-#include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
+#include <linux/module.h>	/* THIS_MODULE */
+#include <linux/hdreg.h>	/* struct hd_geometry */
+#include <linux/cdrom.h>	/* CDROM_GET_CAPABILITY */
+#include <linux/slab.h>
+#include <linux/mm.h>		/* kvzalloc(), kvfree() */
+#include <linux/string.h>
+#include <linux/limits.h>
 #include <linux/version.h>
-#include <linux/blk-mq.h>
-#include <linux/blkdev.h>
 #include "device.h"
+#include "convenient.h"		/* PRINT_CTX() */
+
 /*
  * Logical == physical block size. In-tree builds get it from Kconfig;
  * standalone builds may add -DCONFIG_SBLKDEV_BLOCK_SIZE=N (within
@@ -23,7 +32,6 @@
 
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
-	int ret = BLK_STS_OK;
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
@@ -33,21 +41,21 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	cant_sleep(); /* Cannot do anything that's blocking! */
 
 	/*
-	 * The request contains a list of memory pages (bio_vec).
-	 * In a 'real' driver you must map these to your device's DMA.
-	 * Once ready, submit it to hardware by writing the command to the
-	 * device's 'doorbell' register or ring buffer.
-	 * Here, we iterate over all the BIO's for this in-flight I/O request
-	 * - and each bio_vec within them - calculating the src or dest address
-	 * and the length; we then perform a simple memcpy() (in lieu of DMA)
-	 * to perform the actual IO, the read or write.
+	 * The request is nothing but a list of bios; a bio is a list of
+	 * (page, offset, len) segments (struct bio_vec 's).
+	 * In a 'real' driver you must map these for DMA and ring the
+	 * hardware's doorbell.
+	 * Here, we simply iterate over all the BIO's for this in-flight IO
+	 * request - and each bio_vec within them - calculating the src or
+	 * dest address and the length; we then perform a simple memcpy() (in
+	 * lieu of DMA) to perform the actual IO, the read or write.
 	 */
 	rq_for_each_segment(bvec, rq, iter) {
 		unsigned long len = bvec.bv_len;
 		void *buf = page_address(bvec.bv_page) + bvec.bv_offset;
 
-		if ((pos + len) > dev_size)
-			len = (unsigned long)(dev_size - pos);
+		if (len > (dev_size - pos))
+			return BLK_STS_IOERR;
 
 		if (rq_data_dir(rq))
 			memcpy(dev->data + pos, buf, len); /* WRITE */
@@ -58,7 +66,7 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 		*nr_bytes += len;
 	}
 
-	return ret;
+	return BLK_STS_OK;
 }
 
 /*
@@ -83,6 +91,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	sector_t sec = blk_rq_pos(rq);
 
 	cant_sleep(); /* Cannot do anything that's blocking! */
+	dev_dbg(dev, "<--- new IO req --->\n");
 	PRINT_CTX();
 
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
@@ -114,7 +123,8 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (sector:#bytes) (stat=%d)\n",
 		tag, sec, nr_bytes, status);
 	if (status)
-		dev_warn(dev, "request failed!\n");
+		dev_warn(dev, "request failed! (status=%d, errno=%d)\n",
+			status, blk_status_to_errno(status));
 
 	return BLK_STS_OK;
 }
