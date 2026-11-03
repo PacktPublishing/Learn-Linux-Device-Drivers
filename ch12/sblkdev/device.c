@@ -68,12 +68,14 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq; // the in-flight I/O request
 	struct device *dev = disk_to_dev(rq->q->disk);
+	int tag = rq->tag;
+	sector_t sec = blk_rq_pos(rq);
 
 	cant_sleep(); /* Cannot do anything that's blocking! */
 	PRINT_CTX();
 
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
-		 rq->tag, rq_data_dir(rq)?"write":"read");
+		 tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
 	dev_dbg(dev, "ADDN_DTL:\n"
 		"# SW Qs = %d\n"
@@ -99,9 +101,10 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 		status = BLK_STS_IOERR;
 
 	blk_mq_end_request(rq, status);
+	/* Now the rq belongs to blk-mq again, so don't touch */
 
-	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (pos:#bytes) (stat=%d)\n",
-		rq->tag, blk_rq_pos(rq), nr_bytes, status);
+	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (sector:#bytes) (stat=%d)\n",
+		tag, sec, nr_bytes, status);
 	if (status)
 		dev_warn(dev, "request failed!\n");
 
