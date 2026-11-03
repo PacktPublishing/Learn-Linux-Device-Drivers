@@ -64,8 +64,8 @@
 static int sblkdev_major;
 static LIST_HEAD(sblkdev_device_list);
 static char *sblkdev_catalog = "sblkdev1,4096;sblkdev2,8192";
-module_param_named(catalog, sblkdev_catalog, charp, 0644);
-MODULE_PARM_DESC(catalog, "New block devices catalog in format '<name>,<capacity sectors>;...'");
+//module_param_named(catalog, sblkdev_catalog, charp, 0644);
+//MODULE_PARM_DESC(catalog, "New block devices catalog in format '<name>,<capacity sectors>;...'");
 
 /*
  * sblkdev_init() - Entry point 'init'.
