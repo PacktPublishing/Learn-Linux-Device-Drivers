@@ -44,7 +44,7 @@ A few excellent books that come to mind (specific books on the Linux kernel and 
 - The Pragmatic Programmer: From Journeyman to Master, Hunt and Thomas
 - The Joy of Linux, Hall and Proffitt
 - Linux Kernel Debugging - Leverage proven tools and advanced techniques to effectively debug Linux kernels and kernel modules, Kaiwan N Billimoria, Packt
-- Linux Kernel Programming - A comprehensive guide to kernel internals, writing kernel modules, and kernel synchronization, Kaiwan N Billimoria, Packt
+- Linux Kernel Programming - A comprehensive guide to kernel internals, writing kernel modules, and kernel synchronization, 2nd Ed, Kaiwan N Billimoria, Packt
 - Linux Kernel Programming, Part 2 - Writing character device drivers: Learn to work with user-kernel interfaces, handle peripheral I/O & hardware interrupts, Kaiwan N Billimoria, Packt
 - Hands-On System Programming with Linux, Kaiwan N Billimoria, Packt
 - Unix Network Programming, W. Richard Stevens
@@ -67,11 +67,17 @@ A few excellent books that come to mind (specific books on the Linux kernel and 
 
 - [Lowlevel programming University, gurugio](https://github.com/gurugio/lowlevelprogramming-university)
 - [ADVICE TO A YOUNG FIRMWARE DEVELOPER – BY JACK GANSSLE; AND ASSEMBLY, Kaiwan NB, Nov 2018](https://kaiwantech.wordpress.com/2018/11/20/advice-to-a-young-firmware-developer-by-jack-ganssle-and-assembly/)
+
+- Johannes 4GNU_Linux : Linux device drivers series:
+    - [YouTube Channel tutorials](https://www.youtube.com/channel/UCHkwlexIsoJVa5g_G9g18GA)
+    - [Github](https://github.com/Johannes4Linux/Linux_Driver_Tutorial)
+
 - *Tip (reprodcued from Chapter 5)*:
 "Is there a really practical hands-on tip, an almost guaranteed way to become a kernel hacker? Of course, keep reading this book! Ha ha, yes, besides, do partake in the [simply awesome Eudyptula Challenge](http://www.eudyptula-challenge.org/). Hang on, it's - very unfortuantely, and as of this writing - closed down.
 Fear not, [here's a site with all the challenges](https://github.com/agelastic/eudyptula) posted (and the solutions, don't cheat!); do check it out and try the challenges."
 - [Create Your Own Operating System: Build, deploy, and test your very own operating systems for the Internet of Things and other devices, Lucus Darnell, Aug 2016; Kindle:](https://www.amazon.in/Create-Your-Own-Operating-System-ebook/dp/B01KU8N6FC/)
 
+<_UPDATE Top link_
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 <br>
@@ -127,6 +133,17 @@ Miscellaneous:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
+## Chapter 2, The LDM and Platform drivers - Further Reading
+
+- LDM
+    - [Linux Device Model (LDM)](https://linux-kernel-dev.blogspot.com/2017/02/linux-device-model-ldm.html)
+    - [The Driver Model Core, Part I, Greg K Hartman, June 2003! (old but gold)](https://www.linuxjournal.com/article/6717)
+    - [Understanding the Structure of a Linux Kernel Device Driver, Sergio Prado, ELC 2021](https://www.youtube.com/watch?v=XoYkHUnmpQo&t=2561s)
+    - [Driver Binding](https://www.kernel.org/doc/html/latest/driver-api/driver-model/binding.html)
+    - [Device drivers infrastructure](https://www.kernel.org/doc/html/v6.18/driver-api/infrastructure.html)
+    - [A tour of the mfd, regmap and syscon APIs, Bootlin](https://bootlin.com/pub/conferences/2015/elce/belloni-mfd-regmap-syscon/belloni-mfd-regmap-syscon.pdf)
+
+
 ## Chapter 4, The Device Tree - Further Reading
 
 - Device Tree
@@ -139,11 +156,13 @@ Miscellaneous:
     - [Device Trees for Dummies, Thomas Pettazoni, Bootlin](https://bootlin.com/pub/conferences/2013/elce/petazzoni-device-tree-dummies/petazzoni-device-tree-dummies.pdf)
     - [How (the) linux device tree operate(s), G Chakraborty, LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7448733399097294848/)
 
+- [Matching the device to the driver, a LinkedIn post by D Zhu](https://www.linkedin.com/posts/david-zhu-3a68a855_embeddedlinux-kerneldevelopment-devicedrivers-activity-7359187989844869121-l0U7?utm_source=social_share_send&utm_medium=member_desktop_web&rcm=ACoAAAA6kn8BD03SDQPxl_gJbaNGlauCaJ-lxzA)
+
+
 - ACPI
     - [ACPI vs. Device Tree: The Linux Approach to Hardware Description, Tushar V](https://www.linkedin.com/pulse/acpi-vs-device-tree-linux-approach-hardware-tushar-vyavahare-cbxac/)
     - [Linux Device Configuration Mechanisms - ACPI vs Device Tree | Linux kernel and Linux device driver, YouTube](https://www.youtube.com/watch?v=UIXtM1IlnG4)
-- []()
-- []()
+
 - DT Overlays
     - [Using Device Tree Overlays, example on BeagleBone boards, Michael Opdenacker, Feb 2022](https://bootlin.com/blog/using-device-tree-overlays-example-on-beaglebone-boards/)
     - [How to Write Device Tree Overlays, Toradex](https://developer.toradex.com/software/linux-resources/device-tree/how-to-write-device-tree-overlays/)
@@ -292,8 +311,10 @@ Miscellaneous:
 
 
 ## Chapter 13, Writing a USB Device Driver
+- [USB Specification Rev 2.0 PDF (includes the famous Chapter 9, USB Device Framework)](https://eater.net/downloads/usb_20.pdf)
+- [USB gadget mode in Raspberry Pi OS: SSH over USB, P Oberosier, Jan 2026](https://www.raspberrypi.com/news/usb-gadget-mode-in-raspberry-pi-os-ssh-over-usb/)
 - [Writing USB Device Drivers - the official kernel doc for a USB 'skeleton' driver](https://docs.kernel.org/driver-api/usb/writing_usb_driver.html)
-- []()
+
 - []()
 - []()
 
