@@ -13,48 +13,48 @@ ccflags-y += "-D CONFIG_SBLKDEV_REQUESTS_BASED"
 ccflags-y += "-D SBLKDEV_SHOW_ADDN_DTL"
 
 # Allows you to build a module in a range of kernel versions [5.10, 6.18.x].
-ccflags-y += $(shell 							\
-	grep -qw "*bi_bdev;" $(srctree)/include/linux/blk_types.h &&		\
+ccflags-y += $(shell 							       \
+	grep -qw "*bi_bdev;" $(srctree)/include/linux/blk_types.h &&	       \
 		echo -D HAVE_BI_BDEV)
 
-ccflags-y += $(shell 							\
-	grep -qw "*bi_disk;" $(srctree)/include/linux/blk_types.h &&		\
+ccflags-y += $(shell 							       \
+	grep -qw "*bi_disk;" $(srctree)/include/linux/blk_types.h &&	       \
 		echo -D HAVE_BI_BDISK)
 
-ccflags-y += $(shell 							\
-	grep -qw "blk_qc_t submit_bio" $(srctree)/include/linux/bio.h &&	\
+ccflags-y += $(shell 							       \
+	grep -qw "blk_qc_t submit_bio" $(srctree)/include/linux/bio.h &&       \
 		echo -D HAVE_QC_SUBMIT_BIO)
 
-ccflags-y += $(shell 							\
-	grep -qw "blk_mq_alloc_disk" $(srctree)/include/linux/blk-mq.h &&	\
+ccflags-y += $(shell 							       \
+	grep -qw "blk_mq_alloc_disk" $(srctree)/include/linux/blk-mq.h &&      \
 		echo -D HAVE_BLK_MQ_ALLOC_DISK)
 
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -qw "int add_disk" $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&	       \
+	grep -qw "int add_disk" $(srctree)/include/linux/genhd.h &&	       \
 		echo -D HAVE_ADD_DISK_RESULT)
-ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
-	grep -qw "int add_disk" $(srctree)/include/linux/blkdev.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&	       \
+	grep -qw "int add_disk" $(srctree)/include/linux/blkdev.h &&	       \
 		echo -D HAVE_ADD_DISK_RESULT)
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -qw "int __must_check add_disk" $(srctree)/include/linux/genhd.h && \
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&	       \
+      grep -qw "int __must_check add_disk" $(srctree)/include/linux/genhd.h && \
 		echo -D HAVE_ADD_DISK_RESULT)
-ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
-	grep -qw "int __must_check add_disk" $(srctree)/include/linux/blkdev.h && \
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&	       \
+     grep -qw "int __must_check add_disk" $(srctree)/include/linux/blkdev.h && \
 		echo -D HAVE_ADD_DISK_RESULT)
 
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/genhd.h &&	\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&	       \
+	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/genhd.h &&   \
 		echo -D HAVE_BLK_CLEANUP_DISK)
-ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
-	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/blkdev.h &&	\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&	       \
+	grep -qw "void blk_cleanup_disk" $(srctree)/include/linux/blkdev.h &&  \
 		echo -D HAVE_BLK_CLEANUP_DISK)
 
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&	       \
 		echo -D HAVE_GENHD_H)
 
-ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&		\
-	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/genhd.h &&	\
+ccflags-y += $(shell test -f $(srctree)/include/linux/genhd.h &&	       \
+	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/genhd.h &&   \
 	echo -D HAVE_BLK_ALLOC_DISK)
-ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&		\
-	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/blkdev.h &&	\
+ccflags-y += $(shell test -f $(srctree)/include/linux/blkdev.h &&	       \
+	grep -qw "define blk_alloc_disk" $(srctree)/include/linux/blkdev.h &&  \
 		echo -D HAVE_BLK_ALLOC_DISK)
