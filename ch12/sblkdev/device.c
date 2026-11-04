@@ -1,37 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0
-/*
- * One sblkdev 'disk': this source includes the disk setup/teardown, the
- * blk-mq data path (queue_rq) and the block_device_operations (control path).
- */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
-#include <linux/module.h>	/* THIS_MODULE */
-#include <linux/hdreg.h>	/* struct hd_geometry */
-#include <linux/cdrom.h>	/* CDROM_GET_CAPABILITY */
-#include <linux/slab.h>
-#include <linux/mm.h>		/* kvzalloc(), kvfree() */
-#include <linux/string.h>
-#include <linux/limits.h>
+#include <linux/hdreg.h> /* for HDIO_GETGEO */
+#include <linux/cdrom.h> /* for CDROM_GET_CAPABILITY */
 #include <linux/version.h>
+#include <linux/blk-mq.h>
+#include <linux/blkdev.h>
 #include "device.h"
-#include "convenient.h"		/* PRINT_CTX() */
-
-/*
- * Logical == physical block size. In-tree builds get it from Kconfig;
- * standalone builds may add -DCONFIG_SBLKDEV_BLOCK_SIZE=N (within
- * Makefile-standalone).
- * Must be a power of 2 in the range [512, PAGE_SIZE] (checked at build time)
- */
-#ifdef CONFIG_SBLKDEV_BLOCK_SIZE
-#define SBLKDEV_BLOCK_SIZE	CONFIG_SBLKDEV_BLOCK_SIZE
-#else
-#define SBLKDEV_BLOCK_SIZE	SECTOR_SIZE
-#endif
 
 #ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
+	int ret = BLK_STS_OK;
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
@@ -41,21 +22,21 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 	cant_sleep(); /* Cannot do anything that's blocking! */
 
 	/*
-	 * The request is nothing but a list of bios; a bio is a list of
-	 * (page, offset, len) segments (struct bio_vec 's).
-	 * In a 'real' driver you must map these for DMA and ring the
-	 * hardware's doorbell.
-	 * Here, we simply iterate over all the BIO's for this in-flight IO
-	 * request - and each bio_vec within them - calculating the src or
-	 * dest address and the length; we then perform a simple memcpy() (in
-	 * lieu of DMA) to perform the actual IO, the read or write.
+	 * The request contains a list of memory pages (bio_vec).
+	 * In a 'real' driver you must map these to your device's DMA.
+	 * Once ready, submit it to hardware by writing the command to the
+	 * device's 'doorbell' register or ring buffer.
+	 * Here, we iterate over all the BIO's for this in-flight I/O request
+	 * - and each bio_vec within them - calculating the src or dest address
+	 * and the length; we then perform a simple memcpy() (in lieu of DMA)
+	 * to perform the actual IO, the read or write.
 	 */
 	rq_for_each_segment(bvec, rq, iter) {
 		unsigned long len = bvec.bv_len;
 		void *buf = page_address(bvec.bv_page) + bvec.bv_offset;
 
-		if (len > (dev_size - pos))
-			return BLK_STS_IOERR;
+		if ((pos + len) > dev_size)
+			len = (unsigned long)(dev_size - pos);
 
 		if (rq_data_dir(rq))
 			memcpy(dev->data + pos, buf, len); /* WRITE */
@@ -66,7 +47,7 @@ static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 		*nr_bytes += len;
 	}
 
-	return BLK_STS_OK;
+	return ret;
 }
 
 /*
@@ -87,15 +68,12 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 	blk_status_t status = BLK_STS_OK;
 	struct request *rq = bd->rq; // the in-flight I/O request
 	struct device *dev = disk_to_dev(rq->q->disk);
-	int tag = rq->tag;
-	sector_t sec = blk_rq_pos(rq);
 
 	cant_sleep(); /* Cannot do anything that's blocking! */
-	dev_dbg(dev, "<--- new IO req --->\n");
 	PRINT_CTX();
 
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
-		 tag, rq_data_dir(rq)?"write":"read");
+		 rq->tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
 	dev_dbg(dev, "ADDN_DTL:\n"
 		"# SW Qs = %d\n"
@@ -116,17 +94,18 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx, const struct bl
 #endif
 
 	blk_mq_start_request(rq);
-	status = process_request(rq, &nr_bytes); // returns blk_status_t
+
+	if (process_request(rq, &nr_bytes))
+		status = BLK_STS_IOERR;
+
 	blk_mq_end_request(rq, status);
-	/* Now the rq belongs to blk-mq again, so don't touch */
 
-	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (sector:#bytes) (stat=%d)\n",
-		tag, sec, nr_bytes, status);
+	dev_dbg(dev, "[tag %d]  processed: at %llu:%d (pos:#bytes) (stat=%d)\n",
+		rq->tag, blk_rq_pos(rq), nr_bytes, status);
 	if (status)
-		dev_warn(dev, "request failed! (status=%d, errno=%d)\n",
-			status, blk_status_to_errno(status));
+		dev_warn(dev, "request failed!\n");
 
-	return BLK_STS_OK;
+	return status;
 }
 
 static struct blk_mq_ops mq_ops = {
@@ -419,15 +398,6 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	struct sblkdev_device *dev = NULL;
 	int ret = 0;
 	struct gendisk *disk;
-	struct queue_limits lim = {
-		.logical_block_size  = SECTOR_SIZE, // 512 bytes
-		.physical_block_size = SBLKDEV_BLOCK_SIZE,
-		.io_min              = SBLKDEV_BLOCK_SIZE,
-	};
-
-	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE < SECTOR_SIZE ||
-		     SBLKDEV_BLOCK_SIZE > PAGE_SIZE);
-	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE & (SBLKDEV_BLOCK_SIZE - 1));
 
 	//--- Block driver init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
@@ -464,7 +434,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
      * If < 5.14 (HAVE_BLK_MQ_ALLOC_DISK undefined); we have our own
 	 * implementation of this func, my_blk_mq_alloc_disk()
 	 */
-	disk = blk_mq_alloc_disk(&dev->tag_set, &lim, dev);
+	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
 		pr_err("Failed to allocate disk (1)\n");
@@ -519,13 +489,17 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
 	set_capacity(disk, dev->capacity);
 
-#ifndef CONFIG_SBLKDEV_BLOCK_SIZE
-	/* value set to 512 by default (but can be overriden in
-	 * Makefile-standalone) */
+#ifdef CONFIG_SBLKDEV_BLOCK_SIZE
+	// true: set to 512
+	blk_queue_physical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
+	blk_queue_logical_block_size(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
+	blk_queue_io_min(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
+	blk_queue_io_opt(disk->queue, CONFIG_SBLKDEV_BLOCK_SIZE);
+#else
 	queue_physical_block_size(disk->queue);
+	//blk_queue_physical_block_size(disk->queue, SECTOR_SIZE);  // not on 6.14?
 	queue_logical_block_size(disk->queue);
-	queue_io_min(disk->queue);
-	queue_io_opt(disk->queue);
+	//blk_queue_logical_block_size(disk->queue, SECTOR_SIZE);   // not on 6.14?
 #endif
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
