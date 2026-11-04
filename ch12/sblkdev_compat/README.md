@@ -1,7 +1,13 @@
 # sblkdev
 Simple Block Device Linux kernel module
 
-The original README.md is shown here.
+This is the *compatible* (compat) version, designed to be portabe across most 'modern' kernels,
+typically 5.10+. The tradeoff of course is a whole lot of #ifdef...#else...#endif jugglery.
+
+For the 'modern' ver, 6.5+ kernels, simpler more readable code, pl see the 'sblkdev' dir.
+
+
+The original README.md is shown below:
 
 Original url: https://github.com/CodeImp/sblkdev  \[1\]
 
