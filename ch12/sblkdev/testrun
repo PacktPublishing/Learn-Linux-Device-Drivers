@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Turn on Bash 'strict mode'!
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+make clean
+sudo dmesg -C
+make && sudo ./loadblk.sh && ./blkdrv_tester.sh
+sleep 2
+sudo umount /mnt/tmp
+sudo rmmod sblkdev
