@@ -58,12 +58,14 @@
  * A module can create more than one block device.
  * The configuration of block devices is implemented in the simplest way:
  * using the module parameter, which is passed when the module is loaded.
+ * Format: name,size_in_sectors   (a sector is 512 bytes)
  * Example:
- *    modprobe sblkdev catalog="sblkdev1,4096;sblkdev2,8192"
+ *    modprobe sblkdev catalog="sblkdev1,17032;sblkdev2,16384"
  */
 static int sblkdev_major;
 static LIST_HEAD(sblkdev_device_list);
-static char *sblkdev_catalog = "sblkdev1,4096;sblkdev2,8192";
+// the sblkdev1 disk is of size 84 MB, slbkdev2 of size 8 MB
+static char *sblkdev_catalog = "sblkdev1,172032;sblkdev2,16384";
 module_param_named(catalog, sblkdev_catalog, charp, 0644);
 MODULE_PARM_DESC(catalog, "New block devices catalog in format '<name>,<capacity sectors>;...'");
 
