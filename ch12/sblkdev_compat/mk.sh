@@ -14,10 +14,9 @@ case "$1" in
 		;;
 	install)
 		echo "Installing sblkdev (requires root)"
-		SBLKDEV_PATH=/lib/modules/$(uname -r)/kernel/drivers/block
-		mkdir -p ${SBLKDEV_PATH}
-		cp sblkdev.ko ${SBLKDEV_PATH}/
-		depmod
+		make -C /lib/modules/$(uname -r)/build M=$(pwd) modules && \
+		 sudo make -C /lib/modules/$(uname -r)/build M=$(pwd) modules_install
+		sudo depmod
 		echo Completed.
 		;;
 	uninstall)
