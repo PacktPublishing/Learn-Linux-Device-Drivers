@@ -15,8 +15,7 @@ DISKNAME=sblkdev1
 MOUNTPT=/mnt/tmp
 
 if [ $(id -u) -ne 0 ]; then
-	echo "${name}: must run as root."
-	exit 1
+  echo "${name}: must run as root." ; exit 1
 fi
 
 umount ${MOUNTPT} 2>/dev/null || true
@@ -26,26 +25,17 @@ dmesg -C
 [[ ! -f ${DRVNAME}.ko ]] && {
 	./mk.sh build || exit 1
 }
-# use defaults: (params) "sblkdev1,4096;sblkdev2,8192"
+# use defaults for the 'disks': hard-coded as "sblkdev1,4096;sblkdev2,8192"
 insmod ./${DRVNAME}.ko || exit 1
 dmesg
 # dev nodes auto-created...
 
-echo
-echo "${name} :: MUST first create a new partition on the disk $DISKNAME...
-'fdisk /dev/$DISKNAME' will now run..
-Apply these commands in this order:
-n      : New partition
-p      : type Primary  [Enter]
-1      : partition # 1 [Enter]
-1      : First sector (1-2047, default 1): [Enter]
-4095   : Last sector, +/-sectors or +/-size{K,M,G,T,P} (1-4095, default 4095): [Enter]
-w      : write partition table
-"
-fdisk /dev/${DISKNAME} || true
+# We DON'T require to fdisk to create a partition; in fact doing this directly
+# contradicts with the driver's GENHD_FL_NO_PART flag.. so we skip it.
+# The mkfs.ext4 will work upon the whole disk (that's fine).
 
 echo "${name} : -----Creating ext4 filesystem now (say 'y' if asked) ..."
-mkfs.ext4 /dev/${DISKNAME} || true
+mkfs.ext4 /dev/${DISKNAME} #|| true
 
 echo "${name} : -----Mounting new ext4 filesystem now..."
 [[ ! -d ${MOUNTPT} ]] && mkdir -p ${MOUNTPT}
