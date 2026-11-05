@@ -8,8 +8,9 @@
 #include <linux/blkdev.h>
 #include "device.h"
 
-#ifdef CONFIG_SBLKDEV_REQUESTS_BASED
+#define SBLKDEV_BLOCK_SIZE	SECTOR_SIZE
 
+#ifdef CONFIG_SBLKDEV_REQUESTS_BASED
 static inline int process_request(struct request *rq, unsigned int *nr_bytes)
 {
 	int ret = BLK_STS_OK;
@@ -398,6 +399,17 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	struct sblkdev_device *dev = NULL;
 	int ret = 0;
 	struct gendisk *disk;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
+	struct queue_limits lim = {
+		.logical_block_size  = SECTOR_SIZE, // 512 bytes
+		.physical_block_size = SBLKDEV_BLOCK_SIZE,
+		.io_min              = SBLKDEV_BLOCK_SIZE,
+	};
+#endif
+
+	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE < SECTOR_SIZE ||
+		     SBLKDEV_BLOCK_SIZE > PAGE_SIZE);
+	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE & (SBLKDEV_BLOCK_SIZE - 1));
 
 	//--- Block driver init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
@@ -431,10 +443,14 @@ struct sblkdev_device *sblkdev_add(int major, int minor, char *name,
 	/*--- Block driver init step 3 - allocate the disk
 	 * >=5.14: blk_mq_alloc_disk() is a kernel macro, a tiny wrapper over
 	 * __blk_mq_alloc_disk(). (The HAVE_BLK_MQ_ALLOC_DISK is defined.)
-     * If < 5.14 (HAVE_BLK_MQ_ALLOC_DISK undefined); we have our own
+	 * If < 5.14 (HAVE_BLK_MQ_ALLOC_DISK undefined); we have our own
 	 * implementation of this func, my_blk_mq_alloc_disk()
 	 */
-	disk = blk_mq_alloc_disk(&dev->tag_set, NULL, dev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 9, 0)
+	disk = blk_mq_alloc_disk(&dev->tag_set, dev);
+#else
+	disk = blk_mq_alloc_disk(&dev->tag_set, &lim, dev);
+#endif
 	if (unlikely(!disk)) {
 		ret = -ENOMEM;
 		pr_err("Failed to allocate disk (1)\n");
