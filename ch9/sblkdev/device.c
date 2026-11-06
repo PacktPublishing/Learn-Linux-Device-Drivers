@@ -222,8 +222,8 @@ static int sblkdev_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 	return 0;	/* core sets ->start and does the copy_to_user() */
 }
 
-// Device management (or control) plane ops
-static const struct block_device_operations fops = {
+/* Device management (or control) plane ops */
+static const struct block_device_operations sbd_fops = {
 	.owner        = THIS_MODULE,
 	.open         = sblkdev_open,
 	.release      = sblkdev_release,
@@ -354,8 +354,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	disk->first_minor = minor;
 	disk->minors = 1;
 
-	// device management (or control) plane ops for the disk
-	disk->fops = &fops;
+	/* device management (or control) plane ops for the disk */
+	disk->fops = &sbd_fops;
 	disk->private_data = sbdev;
 
 	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
