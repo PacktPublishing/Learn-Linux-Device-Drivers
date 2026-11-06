@@ -13,7 +13,7 @@
 struct sblkdev_device {
 	struct list_head link;
 	sector_t capacity;		/* Device size in sectors */
-	u8 *data;			/* The data in virtual memory */
+	u8 *data;			/* The 'disk' data in virtual memory */
 	struct blk_mq_tag_set tag_set;
 	struct gendisk *disk;
 };

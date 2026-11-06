@@ -249,7 +249,7 @@ void sblkdev_remove(struct sblkdev_device *dev)
 
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 {
-	set->ops = &mq_ops;		// block driver 'request function' setup
+	set->ops = &mq_ops;	/* block driver 'request function' setup */
 	set->nr_hw_queues = 1;
 	set->nr_maps = 1;
 	set->queue_depth = 128;
@@ -260,10 +260,10 @@ static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 	 * BLK_MQ_F_BLOCKING (as our queue_rq never sleeps).
 	 */
 	set->flags = 0;
-	set->cmd_size = 0;		// additional bytes to alloc per request
+	set->cmd_size = 0;	/* additional bytes to alloc per request */
 	set->driver_data = data;
 
-	// 'Alloc a tag set to be associated with one or more request queues.'
+	/* 'Alloc a tag set to be associated with one or more request queues */
 	return blk_mq_alloc_tag_set(set);
 }
 
@@ -285,12 +285,10 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	};
 #endif
 
+	//--- Block driver init step 0: validity checks
 	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE < SECTOR_SIZE ||
 		     SBLKDEV_BLOCK_SIZE > PAGE_SIZE);
 	BUILD_BUG_ON(SBLKDEV_BLOCK_SIZE & (SBLKDEV_BLOCK_SIZE - 1));
-
-	//--- Block driver init step 1
-	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
 
 	if (!capacity || capacity > SBLKDEV_MAX_SECTORS) {
 		pr_err("disk '%s': invalid capacity value (%llu sectors); "
@@ -298,6 +296,9 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 			name, capacity, SBLKDEV_MAX_SECTORS);
 		return ERR_PTR(-EINVAL);
 	}
+
+	//--- Block driver init step 1
+	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
 
 	dev = kzalloc(sizeof(struct sblkdev_device), GFP_KERNEL);
 	if (!dev) {
