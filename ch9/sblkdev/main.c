@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Simple Block Device Linux kernel module for modern >= 5.x Linux kernels.
  * Uses the blk-mq framework and supports only the request-based scheme.
@@ -11,18 +11,16 @@
  * x86_64 Ubuntu 22.04, Ubuntu 24.04, 25.10, Debian Trixie.
  * Contains a minimum of code to create the most primitive block device.
  * This version's code is available here:
- * ___
- * The book shows and teaches this ver only.
+ * https://github.com/PacktPublishing/Learn-Linux-Device-Drivers/tree/main/ch9/sblkdev
+ * The book (Ch 9) shows and teaches this ver only.
  *
  * 2. For a 'compat' version (Not this one, and closer to Shtepa's original), pl
  * see here:
- * https://github.com/PacktPublishing/Learn-Linux-Device-Drivers/tree/main/ch12/sblkdev_compat
+ * https://github.com/PacktPublishing/Learn-Linux-Device-Drivers/tree/main/ch9/sblkdev_compat
  * It does support slightly older kernels and distros (5.10+); the tradeoff
  * of course is a whole lot of #ifdef...#else...#endif jugglery.
- *
  * Original code credit: Sergei Shtepa:
  * https://github.com/CodeImp/sblkdev
- *
  * Ref article: https://prog.world/linux-kernel-5-0-we-write-simple-block-device-under-blk-mq/
  * (Unfortunately, the original article is no longer available.)
  */
