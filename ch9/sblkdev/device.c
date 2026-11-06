@@ -198,7 +198,7 @@ static int sblkdev_ioctl(struct block_device *bdev, blk_mode_t mode,
 
 /*
  * The disk geometry 'get' routine... invoked by fdisk and cousins (cfdisk,
- * sfdisk). Actually this routine too is not required, just a 'dummy', as CHS
+ * sfdisk). Actually this routine is not required, just a 'dummy', as CHS
  * disk geometry is outdated anyway (we use LBA). We show the caller (via our
  * PRINT_CTX() macro) and populate the hd_geometry structure with typical
  * defaults, that's it.
@@ -219,7 +219,7 @@ static int sblkdev_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 	geo->sectors = 63;
 	geo->cylinders = (unsigned short)min_t(u64, cylinders, USHRT_MAX);
 
-	return 0;	/* core sets ->start and does the copy_to_user() */
+	return 0;
 }
 
 /* Device management (or control) plane ops */
@@ -244,7 +244,8 @@ void sblkdev_remove(struct sblkdev_device *dev)
 	blk_mq_free_tag_set(&dev->tag_set);
 	kvfree(dev->data);
 	kfree(dev);
-	pr_info("simple block device was removed\n");
+	pr_info("simple block device '%s' [%d:%d] was removed\n",
+		dev->disk->disk_name, dev->disk->major, dev->disk->first_minor);
 }
 
 static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
@@ -382,7 +383,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	 * The disk's now live! It can be seen and used by userspace, via 'lsblk'
 	 * or 'cat /proc/partitions' and can be used for IO.
 	 */
-	dev_info(dev, "Simple block device [%d:%d] was added\n", major, minor);
+	dev_info(dev, "Simple block device '%s' [%d:%d] was added\n",
+			disk->disk_name, major, minor);
 
 	return sbdev;
 
