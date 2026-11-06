@@ -274,7 +274,7 @@ static inline int init_tag_set(struct blk_mq_tag_set *set, void *data)
 struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 				  sector_t capacity)
 {
-	struct sblkdev_device *dev = NULL;
+	struct sblkdev_device *sbdev = NULL;
 	int ret = 0;
 	struct gendisk *disk;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 9, 0)
@@ -300,16 +300,16 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	//--- Block driver init step 1
 	pr_info("add device '%s' capacity %llu sectors\n", name, capacity);
 
-	dev = kzalloc(sizeof(struct sblkdev_device), GFP_KERNEL);
-	if (!dev) {
+	sbdev = kzalloc(sizeof(struct sblkdev_device), GFP_KERNEL);
+	if (!sbdev) {
 		ret = -ENOMEM;
 		goto fail;
 	}
 
-	INIT_LIST_HEAD(&dev->link);
-	dev->capacity = capacity;
-	dev->data = kvzalloc((size_t)capacity << SECTOR_SHIFT, GFP_KERNEL);
-	if (!dev->data) {
+	INIT_LIST_HEAD(&sbdev->link);
+	sbdev->capacity = capacity;
+	sbdev->data = kvzalloc((size_t)capacity << SECTOR_SHIFT, GFP_KERNEL);
+	if (!sbdev->data) {
 		ret = -ENOMEM;
 		goto fail_kfree;
 	}
@@ -318,7 +318,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	 * driver initialization when using the request-based approach.
 	 */
 	pr_info("Going via explicit request-based approach\n");
-	ret = init_tag_set(&dev->tag_set, dev);
+	ret = init_tag_set(&sbdev->tag_set, sbdev);
 	if (ret) {
 		pr_err("Failed to allocate tag set\n");
 		goto fail_kvfree;
@@ -329,9 +329,9 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	 * __blk_mq_alloc_disk().
 	 */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 9, 0)
-	disk = blk_mq_alloc_disk(&dev->tag_set, dev);
+	disk = blk_mq_alloc_disk(&sbdev->tag_set, sbdev);
 #else
-	disk = blk_mq_alloc_disk(&dev->tag_set, &lim, dev);
+	disk = blk_mq_alloc_disk(&sbdev->tag_set, &lim, sbdev);
 #endif
 	if (IS_ERR(disk)) {
 		ret = PTR_ERR(disk);
@@ -341,8 +341,8 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 
 	/*--- Block driver init step 4 - initialize the disk and make it live ---*/
 	// Ok, we now have the 'disk'...
-	dev->disk = disk;
-	struct device *dvc = disk_to_dev(disk);
+	sbdev->disk = disk;
+	struct device *dev = disk_to_dev(disk);
 
 	/* only one partition */
 #ifdef GENHD_FL_NO_PART_SCAN
@@ -358,10 +358,10 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 
 	// device management (or control) plane ops for the disk
 	disk->fops = &fops;
-	disk->private_data = dev;
+	disk->private_data = sbdev;
 
 	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
-	set_capacity(disk, dev->capacity);
+	set_capacity(disk, sbdev->capacity);
 
 #if 0
 	/*
@@ -377,25 +377,25 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 
 	ret = add_disk(disk);
 	if (ret) {
-		dev_err(dvc, "Failed to add disk '%s'\n", disk->disk_name);
+		dev_err(dev, "Failed to add disk '%s'\n", disk->disk_name);
 		goto fail_put_disk;
 	}
 	/*
 	 * The disk's now live! It can be seen and used by userspace, via 'lsblk'
 	 * or 'cat /proc/partitions' and can be used for IO.
 	 */
-	dev_info(dvc, "Simple block device [%d:%d] was added\n", major, minor);
+	dev_info(dev, "Simple block device [%d:%d] was added\n", major, minor);
 
-	return dev;
+	return sbdev;
 
 fail_put_disk:
-	put_disk(dev->disk);
+	put_disk(sbdev->disk);
 fail_free_tag_set:
-	blk_mq_free_tag_set(&dev->tag_set);
+	blk_mq_free_tag_set(&sbdev->tag_set);
 fail_kvfree:
-	kvfree(dev->data);
+	kvfree(sbdev->data);
 fail_kfree:
-	kfree(dev);
+	kfree(sbdev);
 fail:
 	pr_err("Failed to add block device\n");
 
