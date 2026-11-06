@@ -40,9 +40,9 @@ static inline blk_status_t process_request(struct request *rq,
 {
 	struct bio_vec bvec;
 	struct req_iterator iter;
-	struct sblkdev_device *dev = rq->q->queuedata; // our driver context
+	struct sblkdev_device *sbdev = rq->q->queuedata; // our driver context
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
-	loff_t dev_size = (dev->capacity << SECTOR_SHIFT);
+	loff_t dev_size = (sbdev->capacity << SECTOR_SHIFT);
 
 	/*
 	 * The request is nothing but a list of bios; a bio is a list of
@@ -70,10 +70,10 @@ static inline blk_status_t process_request(struct request *rq,
 
 		switch (rqst) {
 		case REQ_OP_READ:
-			memcpy(buf, dev->data + pos, len); /* READ */
+			memcpy(buf, sbdev->data + pos, len); /* READ */
 			break;
 		case REQ_OP_WRITE:
-			memcpy(dev->data + pos, buf, len); /* WRITE */
+			memcpy(sbdev->data + pos, buf, len); /* WRITE */
 			break;
 		default:
 			return BLK_STS_NOTSUPP;
@@ -152,15 +152,15 @@ static const struct blk_mq_ops mq_ops = {
 
 static int sblkdev_open(struct gendisk *disk, blk_mode_t mode)
 {
-	struct sblkdev_device *dev = disk->private_data;
-	struct device *dvc = disk_to_dev(disk);
+	struct sblkdev_device *sbdev = disk->private_data;
+	struct device *dev = disk_to_dev(disk);
 
-	if (!dev) {
+	if (!sbdev) {
 		pr_err("Invalid disk private_data\n");
 		return -ENXIO;
 	}
 
-	dev_dbg(dvc, "Device was opened\n");
+	dev_dbg(dev, "Device was opened\n");
 	PRINT_CTX();
 
 	return 0;
@@ -168,15 +168,15 @@ static int sblkdev_open(struct gendisk *disk, blk_mode_t mode)
 
 static void sblkdev_release(struct gendisk *disk)
 {
-	struct sblkdev_device *dev = disk->private_data;
-	struct device *dvc = disk_to_dev(disk);
+	struct sblkdev_device *sbdev = disk->private_data;
+	struct device *dev = disk_to_dev(disk);
 
-	if (!dev) {
+	if (!sbdev) {
 		pr_err("Invalid disk private_data\n");
 		return;
 	}
 
-	dev_dbg(dvc, "Device was closed\n");
+	dev_dbg(dev, "Device was closed\n");
 	PRINT_CTX();
 }
 
@@ -189,9 +189,9 @@ static void sblkdev_release(struct gendisk *disk)
 static int sblkdev_ioctl(struct block_device *bdev, blk_mode_t mode,
 			unsigned int cmd, unsigned long arg)
 {
-	struct device *dvc = disk_to_dev(bdev->bd_disk);
+	struct device *dev = disk_to_dev(bdev->bd_disk);
 
-	dev_dbg(dvc, "%s(): control command [0x%x] received\n", __func__, cmd);
+	dev_dbg(dev, "%s(): control command [0x%x] received\n", __func__, cmd);
 	PRINT_CTX();
 	return -ENOTTY;
 }
@@ -206,13 +206,13 @@ static int sblkdev_ioctl(struct block_device *bdev, blk_mode_t mode,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 18, 0)
 static int sblkdev_getgeo(struct gendisk *disk, struct hd_geometry *geo)
 {
-	struct sblkdev_device *dev = disk->private_data;
+	struct sblkdev_device *sbdev = disk->private_data;
 #else
 static int sblkdev_getgeo(struct block_device *bdev, struct hd_geometry *geo)
 {
-	struct sblkdev_device *dev = bdev->bd_disk->private_data;
+	struct sblkdev_device *sbdev = bdev->bd_disk->private_data;
 #endif
-	u64 cylinders = DIV_ROUND_UP_ULL(dev->capacity, 255 * 63);
+	u64 cylinders = DIV_ROUND_UP_ULL(sbdev->capacity, 255 * 63);
 
 	PRINT_CTX();
 	geo->heads = 255;
