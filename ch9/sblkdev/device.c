@@ -344,9 +344,9 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 	sbdev->disk = disk;
 	struct device *dev = disk_to_dev(disk);
 
-	/* only one partition */
-#ifdef GENHD_FL_NO_PART_SCAN
-	disk->flags |= GENHD_FL_NO_PART_SCAN;
+	/* No partitions, just setup the disk as a single raw storage chunk */
+#ifdef GENHD_FL_NO_PART
+	disk->flags |= GENHD_FL_NO_PART;
 #endif
 
 	/* If removable device:
