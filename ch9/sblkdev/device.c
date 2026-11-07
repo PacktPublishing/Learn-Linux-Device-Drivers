@@ -40,7 +40,7 @@ static inline blk_status_t process_request(struct request *rq,
 {
 	struct bio_vec bvec;
 	struct req_iterator iter;
-	struct sblkdev_device *sbdev = rq->q->queuedata; // our driver context
+	struct sblkdev_device *sbdev = rq->q->queuedata; /* our driver context */
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 	loff_t dev_size = (sbdev->capacity << SECTOR_SHIFT);
 
@@ -55,12 +55,12 @@ static inline blk_status_t process_request(struct request *rq,
 	 * lieu of DMA) to perform the actual IO, the read or write.
 	 */
 
-	// We only support read/write
+	/* We only support read/write */
 	int rqst = req_op(rq);
 	if (rqst != REQ_OP_READ && rqst != REQ_OP_WRITE)
 		return BLK_STS_NOTSUPP;
 
-	// Iterate over the BIOs (and the bio_vec's of each BIO)
+	/* Iterate over the BIOs (and the bio_vec's of each BIO) */
 	rq_for_each_segment(bvec, rq, iter) {
 		unsigned int len = bvec.bv_len;
 		void *buf = page_address(bvec.bv_page) + bvec.bv_offset;
@@ -111,6 +111,9 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx,
 	dev_dbg(dev, "<--- new IO req --->\n");
 	PRINT_CTX();
 
+	/* Saying it's a 'read' if not 'write' is a bit simplistic; we 
+	 * nevertheless do so as this driver will only receive R/W requests
+	 */
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
 		 tag, rq_data_dir(rq)?"write":"read");
 #ifdef SBLKDEV_SHOW_ADDN_DTL
@@ -181,10 +184,11 @@ static void sblkdev_release(struct gendisk *disk)
 }
 
 /*
- * We don't really implement the ioctl here... this is as, from 6.6+, the
- * block core will itself handle the HDIO_GETGEO in ioctl (and compat_ioctl)
- * before invoking the driver hook; the 'getgeo hook follows. So, this ioctl's
- * a dummy, to just show who, if anyone, invokes it (libblkid might).
+ * We don't really need to implement the ioctl here... this is as, from 6.6+,
+ * the block core will itself handle it. In particular, it will invoke the
+ * HDIO_GETGEO cmd ioctl (and compat_ioctl) before invoking the driver hook;
+ * our 'getgeo' hook follows. So, this ioctl's a dummy, to just show who, if
+ * anyone, invokes it (libblkid might).
  */
 static int sblkdev_ioctl(struct block_device *bdev, blk_mode_t mode,
 			unsigned int cmd, unsigned long arg)
@@ -361,17 +365,6 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 
 	snprintf(disk->disk_name, DISK_NAME_LEN, "%s", name);
 	set_capacity(disk, sbdev->capacity);
-
-#if 0
-	/*
-	 * Value set to SECTOR_SIZE (512 bytes) by default (but can be
-	 * overriden by SBLKDEV_BLOCK_SIZE
-	 */
-	queue_physical_block_size(disk->queue);
-	queue_logical_block_size(disk->queue);
-	queue_io_min(disk->queue);
-	queue_io_opt(disk->queue);
-#endif
 	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, disk->queue);
 
 	ret = add_disk(disk);
