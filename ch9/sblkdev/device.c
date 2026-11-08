@@ -16,7 +16,10 @@
 #include "device.h"
 #include "convenient.h"		/* PRINT_CTX() */
 
-#define SBLKDEV_SHOW_ADDN_DTL
+/* Toggle showing additional details in the request function */
+#undef SBLKDEV_SHOW_ADDN_DTL
+//#define SBLKDEV_SHOW_ADDN_DTL
+
 /*
  * Let's set the upper bound for a disk (in 512-byte sectors) to the value
  * 1 GiB. This keeps the size below kvmalloc()'s limit of INT_MAX bytes, and
