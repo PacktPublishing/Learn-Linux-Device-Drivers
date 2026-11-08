@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Simple Block Device Linux kernel module for modern >= 5.x Linux kernels.
  * Uses the blk-mq framework and supports only the request-based scheme.
