@@ -36,13 +36,13 @@ dmesg
 # contradicts with the driver's GENHD_FL_NO_PART flag.. so we skip it.
 # The mkfs.ext4 will work upon the whole disk (that's fine).
 
-echo "${name} : -----Creating ext4 filesystem now (say 'y' if asked) ..."
-mkfs.ext4 /dev/${DISKNAME} #|| true
+echo "${name} : -----Creating ext4 filesystem now ..."
+mkfs.ext4 /dev/${DISKNAME}
 
 echo "${name} : -----Mounting new ext4 filesystem now..."
 [[ ! -d ${MOUNTPT} ]] && mkdir -p ${MOUNTPT}
 mount /dev/${DISKNAME} ${MOUNTPT} || exit 1
-mount |grep $DISKNAME
+mount |grep ${DISKNAME}
 
-echo "${name} : 'disk' ready, try it out!"
+echo "${name} : disk '${DISKNAME}' ready, try it out!"
 exit 0
