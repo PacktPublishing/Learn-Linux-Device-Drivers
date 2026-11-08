@@ -46,6 +46,7 @@ static inline blk_status_t process_request(struct request *rq,
 	struct sblkdev_device *sbdev = rq->q->queuedata; /* our driver context */
 	loff_t pos = blk_rq_pos(rq) << SECTOR_SHIFT;
 	loff_t dev_size = (sbdev->capacity << SECTOR_SHIFT);
+	int rqst;
 
 	/*
 	 * The request is nothing but a list of bios; a bio is a list of
@@ -59,7 +60,7 @@ static inline blk_status_t process_request(struct request *rq,
 	 */
 
 	/* We only support read/write */
-	int rqst = req_op(rq);
+	rqst = req_op(rq);
 	if (rqst != REQ_OP_READ && rqst != REQ_OP_WRITE)
 		return BLK_STS_NOTSUPP;
 
@@ -114,7 +115,7 @@ static blk_status_t sblkdev_queue_rq(struct blk_mq_hw_ctx *hctx,
 	dev_dbg(dev, "<--- new IO req --->\n");
 	PRINT_CTX();
 
-	/* Saying it's a 'read' if not 'write' is a bit simplistic; we 
+	/* Saying it's a 'read' if not 'write' is a bit simplistic; we
 	 * nevertheless do so as this driver will only receive R/W requests
 	 */
 	dev_dbg(dev, "[tag %d] %s request from blk-mq\n",
@@ -347,7 +348,7 @@ struct sblkdev_device *sblkdev_add(int major, int minor, const char *name,
 		goto fail_free_tag_set;
 	}
 
-	/*--- Block driver init step 4 - initialize the disk and make it live ---*/
+	/*--- Block driver init step 4 - init the disk and make it live ---*/
 	// Ok, we now have the 'disk'...
 	sbdev->disk = disk;
 	struct device *dev = disk_to_dev(disk);
