@@ -301,7 +301,8 @@ Miscellaneous:
 
 - *NVMe protocol:*
     - [Overview of NVMe Architecture, Oracle blog, Nov 2025](https://blogs.oracle.com/linux/overview-of-nvme-architecture)
-    - [NVMe: What - (this article nicely describes PRP and SGL with diagrams)](https://vatiminxuyu.gitbooks.io/xuyu/content/blog/nvme-what.html)
+    - [SGL in NVM Express, mingw, Feb 2025](https://medium.com/@wmwby/sgl-in-nvm-express-7e9ac9c1c652)
+    - [NVMe: What - (this article nicely describes PRP and SGL with diagrams; this page may or may not work)](https://vatiminxuyu.gitbooks.io/xuyu/content/blog/nvme-what.html)
     - [NVMe - (useful for driver authors)](https://wiki.osdev.org/NVMe)
     - [The NVMe Specification, 1.1a, Sept 2013](https://www.nvmexpress.org/wp-content/uploads/NVM-Express-1_1a.pdf)
     - [SGL in NVM Express, mingw, Medium, Feb 2025](https://medium.com/@wmwby/sgl-in-nvm-express-7e9ac9c1c652)
