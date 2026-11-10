@@ -133,7 +133,7 @@ Miscellaneous:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
-## Chapter 2, The LDM and Platform drivers - Further Reading
+## Chapter 2, The modern LDM and Writing platform drivers - Further Reading
 
 - LDM
     - [Linux Device Model (LDM)](https://linux-kernel-dev.blogspot.com/2017/02/linux-device-model-ldm.html)
@@ -144,7 +144,7 @@ Miscellaneous:
     - [A tour of the mfd, regmap and syscon APIs, Bootlin](https://bootlin.com/pub/conferences/2015/elce/belloni-mfd-regmap-syscon/belloni-mfd-regmap-syscon.pdf)
 
 
-## Chapter 4, The Device Tree - Further Reading
+## Chapter 3, The Device Tree - Further Reading
 
 - Device Tree
     - [Linux and the Devicetree, Grant Likely, official kernel doc](https://docs.kernel.org/devicetree/usage-model.html)
@@ -183,7 +183,7 @@ Miscellaneous:
 
 
 
-## Chapter 8, Writing a PCIe skeleton driver - Further Reading
+## Chapter 5, Writing a PCIe skeleton driver - Further Reading
 
 - [PCI SIG - Special Interest Group](https://pcisig.com/specifications) - PCI standards documents, etc
 - Official kernel doc: [How To Write Linux PCI Drivers](https://docs.kernel.org/PCI/pci.html)
@@ -194,7 +194,7 @@ Miscellaneous:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
-## Chapter 9, Writing a NIC driver - Further Reading
+## Chapter 6, Writing a NIC driver - Further Reading
 
 - Required reading: [Internet protocol suite, Wikipedia article](https://en.wikipedia.org/wiki/Internet_protocol_suite#Comparison_of_TCP/IP_and_OSI_layering)
 
@@ -249,7 +249,7 @@ Miscellaneous:
     - [What are the Network Visualization Tools you guys use for the audit purpose?, Reddit](https://www.reddit.com/r/sysadmin/comments/1bpmisl/what_are_the_network_visualization_tools_you_guys/)
 
 
-## Chapter 10, Writing an Input device driver - Further Reading
+## Chapter 7, Writing an Input device driver - Further Reading
 
 - [Wayland (protocol)](https://en.wikipedia.org/wiki/Wayland_(protocol))
 - [What is libinput?](https://wayland.freedesktop.org/libinput/doc/latest/what-is-libinput.html)
@@ -263,12 +263,8 @@ Miscellaneous:
     - [kernel doc: get called back on keyboard events! Keylogger like?](https://docs.kernel.org/input/notifier.html)
 
 
-- []()
-- []()
 
-...
-
-## Chapter 11, Writing a modern Block Driver, Part 1 – the Linux Storage Stack - Further Reading
+## Chapter 8, Writing a modern Block Driver, Part 1 – the Linux Storage Stack - Further Reading
 - [Cylinder-head-sector, Wikipedia](https://en.wikipedia.org/wiki/Cylinder-head-sector)
 - [Logical block addressing, Wikipedia](https://en.wikipedia.org/wiki/Logical_block_addressing)
 - [Managed Flash Background Operations Series; Part 5: Understanding Logical Block Address to Physical Block Address Translation in NAND Flash Memory](https://americas.kioxia.com/content/dam/kioxia/en-us/business/memory/mlc-nand/asset/KIOXIA_Managed_Flash_BOS_P5_Understanding_L2P_Block_Address_Translation_Tech_Brief.pdf)
@@ -291,7 +287,7 @@ Miscellaneous:
     - [Configuring and managing Device Mapper Multipath, RedHat RHEL7](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html-single/dm_multipath/index)
 
 
-## Chapter 12, Writing a modern Block Driver, Part 2 – the implementation - Further Reading
+## Chapter 9, Writing a modern Block Driver, Part 2 – the implementation - Further Reading
 - [Block Device Drivers; excellent](https://linux-kernel-labs.github.io/refs/heads/master/labs/block_device_drivers.html#block-device-drivers)
 - [Block - official kernel docs](https://www.kernel.org/doc/html/v6.18/block/index.html)
     - [Multi-Queue Block IO Queueing Mechanism (blk-mq) for 6.18](https://www.kernel.org/doc/html/v6.18/block/blk-mq.html)
@@ -311,7 +307,7 @@ Miscellaneous:
 ' - official kernel doc](https://www.kernel.org/doc/html/latest/block/ublk.html)
 
 
-## Chapter 13, Writing a USB Device Driver
+## Chapter 10, Writing a USB Device Driver
 - [USB Specification Rev 2.0 PDF (includes the famous Chapter 9, USB Device Framework)](https://eater.net/downloads/usb_20.pdf)
 - [USB gadget mode in Raspberry Pi OS: SSH over USB, P Oberosier, Jan 2026](https://www.raspberrypi.com/news/usb-gadget-mode-in-raspberry-pi-os-ssh-over-usb/)
 - [Writing USB Device Drivers - the official kernel doc for a USB 'skeleton' driver](https://docs.kernel.org/driver-api/usb/writing_usb_driver.html)
