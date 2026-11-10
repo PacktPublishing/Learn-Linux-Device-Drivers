@@ -154,7 +154,7 @@ static void __exit sblkdev_exit(void)
 module_init(sblkdev_init);
 module_exit(sblkdev_exit);
 
-MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Sergei Shtepa, Kaiwan NB");
-MODULE_DESCRIPTION(
-	"Simple request-based block driver Linux kernel module for modern 6.5+ blk-mq Linux kernels");
+#define DRIVER_DESC	"Simple request-based block driver Linux kernel module for modern 6.5+ blk-mq Linux kernels"
+MODULE_DESCRIPTION(DRIVER_DESC);
+MODULE_LICENSE("GPL");
