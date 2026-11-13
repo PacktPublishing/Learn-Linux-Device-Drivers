@@ -65,6 +65,5 @@ TALKER=talker_dgram
 sudo pkill ${TALKER}
 echo "${name}: running talker process..."
 MSG="hey, ${INTF}, wassup"
-[ -x ${TALKER} ] && {
-  sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}" ${NUM2TX}
-}
+[[ -s ${TALKER} && -x ${TALKER} ]] || die "${TALKER} missing or empty or not executable (try: make clean && make)"
+sudo ./${TALKER} ${DEST_IP_VETH} "${MSG}" ${NUM2TX}
