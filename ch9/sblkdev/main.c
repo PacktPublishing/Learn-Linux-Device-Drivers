@@ -25,6 +25,7 @@
  * (Unfortunately, the original article is no longer available.)
  */
 #define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
+#define DRIVER_DESC	"Simple request-based block driver Linux kernel module for modern 6.5+ blk-mq Linux kernels"
 
 #include "device.h"
 
@@ -154,7 +155,7 @@ static void __exit sblkdev_exit(void)
 module_init(sblkdev_init);
 module_exit(sblkdev_exit);
 
-MODULE_AUTHOR("Sergei Shtepa, Kaiwan NB");
-#define DRIVER_DESC	"Simple request-based block driver Linux kernel module for modern 6.5+ blk-mq Linux kernels"
+MODULE_AUTHOR("Sergei Shtepa");
+MODULE_AUTHOR("Kaiwan NB");
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
