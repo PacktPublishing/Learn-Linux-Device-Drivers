@@ -25,6 +25,7 @@
 #include <linux/ip.h>
 #include <linux/udp.h>
 #include <linux/debugfs.h>
+#include <net/ip.h>
 
 #include "../../convenient.h"
 
