@@ -129,13 +129,18 @@ skb-> head data                                                        tail   en
  */
 
 	/*---------Packet Filtering :) --------------*/
+	if (skb->protocol != htons(ETH_P_IP))
+		goto out_tx;
+
 	/* If the outgoing packet is not of the UDP protocol, discard it */
 	ip = ip_hdr(skb);
-	if (ip->protocol != IPPROTO_UDP) {
+	if (ip->protocol != IPPROTO_UDP || ip_is_fragment(ip)) {
 		pr_cont("x");
 		//pr_debug("not UDP,disregarding pkt..\n");
 		goto out_tx;
 	}
+	if (!skb_transport_header_was_set(skb))
+		goto out_tx;
 	//SKB_PEEK(skb);
 
 	/*
