@@ -194,6 +194,7 @@ static enum hrtimer_restart pseudo_rx_timer_func(struct hrtimer *t)
 	return HRTIMER_RESTART;
 }
 
+/* We ignore the @budget here */
 static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 {
 	struct veth_pvt_data *priv = container_of(napi, struct veth_pvt_data, napi);
@@ -208,8 +209,11 @@ static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 	skb_put(skb, pkt_len);
 	memset(skb->data, 0xAB, pkt_len);	// dummy data
 	skb->protocol = eth_type_trans(skb, priv->netdev);
+	/* Using the napi_gro_receive() is the common modern way; we just stick
+	 * to the simpler netif_receive_skb() for this demo..
+	 * napi_gro_receive(napi, skb);
+	 */
 	netif_receive_skb(skb);
-
 	napi_complete_done(napi, 1);
 
 	return 1;
@@ -248,12 +252,15 @@ static struct net_device_stats *vnet_get_stats(struct net_device *dev)
 {
 	struct veth_pvt_data *priv = netdev_priv(dev);
 
-	spin_lock(&priv->lock);
+	/* Take the BH variant as it disables bottom halves too.. this is as a
+	 * Tx softirq (BH) can occur in the Tx method
+	 */
+	spin_lock_bh(&priv->lock);
 	ndstats.rx_packets = priv->rxpktnum;
 	ndstats.rx_bytes = priv->rx_bytes;
 	ndstats.tx_packets = priv->txpktnum;
 	ndstats.tx_bytes = priv->tx_bytes;
-	spin_unlock(&priv->lock);
+	spin_unlock_bh(&priv->lock);
 
 	return &ndstats;
 }
