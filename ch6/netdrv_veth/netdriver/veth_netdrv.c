@@ -165,11 +165,14 @@ skb-> head data                                                        tail   en
 	print_hex_dump_bytes(" ", DUMP_PREFIX_OFFSET, skb->head + 16 + 20 + 8, skb->len);
 #endif
 
-	/* Update stat counters */
-	spin_lock(&priv->lock);
+	/* Update stat counters
+	 * Strictly speaking we don't require the _bh ver of the spin lock here
+	 * but keep it just for symmetry; no harm done
+	 */
+	spin_lock_bh(&priv->lock);
 	priv->txpktnum = ++tx_pkt_count;
 	priv->tx_bytes += skb->len;
-	spin_unlock(&priv->lock);
+	spin_unlock_bh(&priv->lock);
 
 #if 0
 	pr_debug("Emulating Rx by artificially invoking vnet_rx() now...\n");
