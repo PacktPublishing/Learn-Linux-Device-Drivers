@@ -174,6 +174,7 @@ module_init(sblkdev_init);
 module_exit(sblkdev_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Sergei Shtepa, Kaiwan NB");
+MODULE_AUTHOR("Sergei Shtepa");
+MODULE_AUTHOR("Kaiwan NB");
 MODULE_DESCRIPTION(
 	"Simple request-based block driver Linux kernel module for modern >= 5.x blk-mq Linux kernels");
