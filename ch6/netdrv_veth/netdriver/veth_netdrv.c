@@ -233,6 +233,7 @@ static int vnet_stop(struct net_device *dev)
 	QP;
 	netif_stop_queue(dev);
 	netif_carrier_off(dev);
+	hrtimer_cancel(&priv->rx_timer);
 	napi_disable(&priv->napi);
 
 	return 0;
