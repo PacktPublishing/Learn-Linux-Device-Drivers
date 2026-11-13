@@ -306,14 +306,16 @@ static int vnet_probe(struct platform_device *pdev)
 	priv = netdev_priv(netdev);
 	priv->netdev = netdev;
 	ether_setup(netdev);
-	strscpy(netdev->name, INTF_NAME, strlen(INTF_NAME) + 1);
-	dev_addr_set(netdev, veth_MAC_addr);
+	strscpy(netdev->name, INTF_NAME, sizeof(netdev->name));
+	//dev_addr_set(netdev, veth_MAC_addr);
+	eth_hw_addr_random(netdev);
 
+#if 0
 	if (!is_valid_ether_addr(netdev->dev_addr)) {
 		pr_debug("%s: Invalid ethernet MAC address. Please set using ip / ifconfig\n",
 			 netdev->name);
 	}
-
+#endif
 	/* keep the default flags, just add NOARP */
 	netdev->flags |= IFF_NOARP;
 	netdev->features |= NETIF_F_HW_CSUM;
