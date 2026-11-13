@@ -1,6 +1,6 @@
 #!/bin/bash
 DRV=veth_netdrv
-make && {
+make KEEP_DEBUG_INFO=y && {
   sudo rmmod ${DRV} 2>/dev/null
   sudo dmesg -C
   sudo insmod ${DRV}.ko
