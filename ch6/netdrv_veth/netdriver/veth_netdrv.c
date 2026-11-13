@@ -215,7 +215,6 @@ static int vnet_open(struct net_device *dev)
 	QP;
 	napi_enable(&priv->napi);
 	hrtimer_start(&priv->rx_timer, ns_to_ktime((ONE_MS) * 100), HRTIMER_MODE_REL);	// 100 ms
-	
 
 	netif_carrier_on(dev);
 	netif_start_queue(dev);
@@ -230,7 +229,6 @@ static int vnet_stop(struct net_device *dev)
 	netif_stop_queue(dev);
 	netif_carrier_off(dev);
 	napi_disable(&priv->napi);
-
 
 	return 0;
 }
@@ -322,8 +320,8 @@ static int vnet_probe(struct platform_device *pdev)
 
 	netif_napi_add(netdev, &priv->napi, pseudo_napi_poll);
 
-	hrtimer_init(&priv->rx_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	priv->rx_timer.function = pseudo_rx_timer_func;
+	hrtimer_setup(&priv->rx_timer, pseudo_rx_timer_func, CLOCK_MONOTONIC,
+			HRTIMER_MODE_REL);
 
 	res = register_netdev(netdev);
 	if (res) {
