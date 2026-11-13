@@ -95,7 +95,7 @@ struct veth_pvt_data {
 //--------------------- Tx path -----------------------------------------------
 /*
  * The Tx entry point.
- * Runs in process context.
+ * Runs in atomic context, BH disabled
  * To get to the Tx path, try:
  * - running our custom simple datagram "talker_dgram" userspace app
  *   ./talker_dgram <IP addr> "<some msg>"
@@ -103,9 +103,11 @@ struct veth_pvt_data {
  *   also but realize that ping won't actually work on a local interface).
  * Use a network analyzer (eg tcpdump/Wireshark) to see packets flowing across
  * the interface!
+ * Best: just run our ../userspace/tx_packets_to_veth and
+ * ../userspc/run_and_capture_pkt wrapper scripts to test.
  */
 static int tx_pkt_count;
-static int vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
+static netdev_tx_t vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	const struct iphdr *ip;
 	const struct udphdr *udph;
@@ -113,7 +115,7 @@ static int vnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	if (!skb) {		// paranoia!
 		pr_alert("skb NULL!\n");
-		return -EAGAIN;
+		return NETDEV_TX_BUSY;
 	}
 	//SKB_PEEK(skb);
 
@@ -129,10 +131,11 @@ skb-> head data                                                        tail   en
  */
 
 	/*---------Packet Filtering :) --------------*/
+	/* Accept only IPv4 packets */
 	if (skb->protocol != htons(ETH_P_IP))
 		goto out_tx;
 
-	/* If the outgoing packet is not of the UDP protocol, discard it */
+	/* If the outgoing packet is not IPv4 and UDP protocol, discard it */
 	ip = ip_hdr(skb);
 	if (ip->protocol != IPPROTO_UDP || ip_is_fragment(ip)) {
 		pr_cont("x");
@@ -174,7 +177,7 @@ skb-> head data                                                        tail   en
 #endif
  out_tx:
 	dev_kfree_skb(skb);
-	return 0;
+	return NETDEV_TX_OK;
 }
 
 //--------------------- Rx path -----------------------------------------------
