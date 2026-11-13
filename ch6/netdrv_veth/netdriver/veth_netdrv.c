@@ -148,9 +148,9 @@ skb-> head data                                                        tail   en
 	 * then it's not sent to our n/w interface via our talker_dgram app, so simply ignore it.
 	 */
 	udph = udp_hdr(skb);
-	pr_debug("UDP pkt::src=%d dest=%d len=%u\n", ntohs(udph->source), ntohs(udph->dest),
-		 udph->len);
-	if (udph->dest != ntohs(PORTNUM))	// port # 54295
+	pr_debug("UDP pkt::src=%d dest=%d len=%u\n",
+		ntohs(udph->source), ntohs(udph->dest), ntohs(udph->len));
+	if (udph->dest != htons(PORTNUM))	// port # 54295
 		goto out_tx;
 	//------------------------------
 
