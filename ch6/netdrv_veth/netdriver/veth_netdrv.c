@@ -301,6 +301,9 @@ static int vnet_probe(struct platform_device *pdev)
 	int res = 0;
 
 	QP;
+	/* Use best practice devres routine; also, devm_alloc_etherdev() will
+	 * call ether_setup() internally
+	 */
 	netdev = devm_alloc_etherdev(&pdev->dev, sizeof (*priv));
 	if (!netdev)
 		return -ENOMEM;
@@ -308,7 +311,6 @@ static int vnet_probe(struct platform_device *pdev)
 	SET_NETDEV_DEV(netdev, &pdev->dev);
 	priv = netdev_priv(netdev);
 	priv->netdev = netdev;
-	ether_setup(netdev);
 	strscpy(netdev->name, INTF_NAME, sizeof(netdev->name));
 	//dev_addr_set(netdev, veth_MAC_addr);
 	eth_hw_addr_random(netdev);
