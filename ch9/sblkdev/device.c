@@ -14,7 +14,6 @@
 #include <linux/sizes.h>	/* SZ_1G */
 #include <linux/version.h>
 #include "device.h"
-#include "convenient.h"		/* PRINT_CTX() */
 
 /* Toggle showing additional details in the request function */
 #undef SBLKDEV_SHOW_ADDN_DTL

@@ -26,7 +26,7 @@
 #include <linux/udp.h>
 #include <linux/debugfs.h>
 
-#include "convenient.h"
+#include "../../convenient.h"
 
 #define DUMP_PKTS	1
 #define	Print_hex_dump_bytes(prefix_str, prefix, dataptr, len)    do { \
