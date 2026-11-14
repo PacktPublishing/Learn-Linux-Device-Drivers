@@ -49,10 +49,9 @@ struct virtnic_pvt_data {
  *   also but realize that ping won't actually work on a local interface).
  * Use a network analyzer (eg tcpdump/Wireshark) to see packets flowing across
  * the interface!
- * Best: just run our ../userspace/tx_packets_to_virtnic and
+ * Best: just run our ../userspc/tx_packets_to_virtnic and
  * ../userspc/run_and_capture_pkt wrapper scripts to test.
  */
-static int tx_pkt_count;
 static netdev_tx_t virtnet_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	const struct iphdr *ip;
@@ -91,7 +90,8 @@ skb-> head data                                                        tail   en
 
 	/*
 	 * If the outgoing (UDP protocol) packet does NOT have destination port=54295,
-	 * then it's not sent to our n/w interface via our talker_dgram app, so simply ignore it.
+	 * then it's not sent to our n/w interface via our talker_dgram app,
+	 * so simply ignore it.
 	 */
 	udph = udp_hdr(skb);
 	pr_debug("UDP pkt::src=%d dest=%d len=%u\n",
