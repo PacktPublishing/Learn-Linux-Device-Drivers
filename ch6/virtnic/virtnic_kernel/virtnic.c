@@ -150,10 +150,15 @@ static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 	struct sk_buff *skb;
 	int pkt_len = 64;
 
+	if (unlikely(!budget)) /* poss via netpoll */
+		return 0;
+
 	// Simulate receiving one network packet
 	skb = netdev_alloc_skb(priv->netdev, pkt_len);
-	if (!skb)
+	if (!skb) {
+		napi_complete_done(napi, 0);
 		return 0;
+	}
 
 	skb_put(skb, pkt_len);
 	memset(skb->data, 0xAB, pkt_len);	// dummy data
@@ -270,7 +275,6 @@ static int virtnet_probe(struct faux_device *fdev)
 
 	/* keep the default flags, just add NOARP */
 	netdev->flags |= IFF_NOARP;
-	netdev->features |= NETIF_F_HW_CSUM;
 
 	netdev->watchdog_timeo = 8 * HZ;
 	spin_lock_init(&priv->lock);
