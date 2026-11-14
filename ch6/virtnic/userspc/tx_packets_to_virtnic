@@ -47,18 +47,18 @@ ip link |grep "${FIRST_INTF}.*UP" >/dev/null
 IP_FIRST_INTF=$(getIP ${FIRST_INTF})
 #echo "FIRST_INTF=${FIRST_INTF} IP_FIRST_INTF=${IP_FIRST_INTF}"
 IP_FIRST_INTF_SUBNET=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d.%d.%d", $1, $2, $3)}')
-IP_VETH="${IP_FIRST_INTF_SUBNET}.210"  # 210: randomly chosen
+IP_VNIC="${IP_FIRST_INTF_SUBNET}.210"  # 210: randomly chosen
 
 IP_FIRST_INTF_NODE=$(echo ${IP_FIRST_INTF} |awk -F'.' '{printf("%d", $4)}')
-DEST_IP_VETH_NODE=$((IP_FIRST_INTF_NODE+1))
-[[ ${DEST_IP_VETH_NODE} -ge 255 ]] && DEST_IP_VETH_NODE=253
-DEST_IP_VETH="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VETH_NODE}"
+DEST_IP_VNIC_NODE=$((IP_FIRST_INTF_NODE+1))
+[[ ${DEST_IP_VNIC_NODE} -ge 255 ]] && DEST_IP_VNIC_NODE=253
+DEST_IP_VNIC="${IP_FIRST_INTF_SUBNET}.${DEST_IP_VNIC_NODE}"
 #IP=10.0.2.101
 #DEST_IP=10.0.2.16
 
 ip link show | grep ${INTF} || die "interface \"${INTF}\" not visible? (Driver loaded?)"
 sudo ip link set ${INTF} up || die "bringing intf \"${INTF}\" up failed"
-sudo ip addr add ${IP_VETH}/24 dev ${INTF} 2>/dev/null #|| die "assigning IPv4  addr to \"${INTF}\" failed"
+sudo ip addr add ${IP_VNIC}/24 dev ${INTF} 2>/dev/null #|| die "assigning IPv4  addr to \"${INTF}\" failed"
 
 TALKER=talker_dgram
 [[ ! -f ${TALKER} ]] && make
@@ -66,4 +66,4 @@ sudo pkill ${TALKER}
 echo "${name}: running talker process..."
 MSG="hey, ${INTF}, wassup"
 [[ -s ${TALKER} && -x ${TALKER} ]] || die "${TALKER} missing or empty or not executable (try: make clean && make)"
-./${TALKER} ${DEST_IP_VETH} "${MSG}" ${NUM2TX}
+./${TALKER} ${DEST_IP_VNIC} "${MSG}" ${NUM2TX}
