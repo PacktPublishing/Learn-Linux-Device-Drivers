@@ -19,7 +19,6 @@
 
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
-#include <linux/platform_device.h>
 #include <linux/skbuff.h>
 #include <linux/ethtool.h>
 #include <linux/ip.h>
@@ -59,7 +58,7 @@
 	" SKB packet pointers & offsets:\n" \
 	"  headroom : head:%px - data:%px  [%4u bytes]\n"    \
 	"  pkt data :                         data - tail:%3td        [%4u bytes]\n"  \
-	"  tailroom :                                tail - end:%3u  [%4u bytes]\n", \
+	"  tailroom :                                tail - end:%3u  [%4d bytes]\n", \
 	_skb, \
 	_skb->len, _skb->truesize, refcount_read(&_skb->users), \
 	_skb->mac_header, _skb->network_header, _skb->transport_header, \
