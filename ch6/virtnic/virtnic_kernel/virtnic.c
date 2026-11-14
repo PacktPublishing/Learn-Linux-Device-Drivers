@@ -110,13 +110,13 @@ skb-> head data                                                        tail   en
 #endif
 
 	/* Update stat counters
-	 * Strictly speaking we don't require the _bh ver of the spin lock here
-	 * but keep it just for symmetry; no harm done
+	 * Spin lock: don't use the _bh ver here as netconsole can invoke Tx
+	 * with hw interrupts disabled
 	 */
-	spin_lock_bh(&priv->lock);
-	priv->txpktnum = ++tx_pkt_count;
+	spin_lock(&priv->lock);
+	priv->txpktnum ++;
 	priv->tx_bytes += skb->len;
-	spin_unlock_bh(&priv->lock);
+	spin_unlock(&priv->lock);
 
 #if 0
 	pr_debug("Emulating Rx by artificially invoking virtnet_rx() now...\n");
