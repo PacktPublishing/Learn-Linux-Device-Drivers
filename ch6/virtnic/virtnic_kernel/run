@@ -1,0 +1,10 @@
+#!/bin/bash
+DRV=virtnic
+make KEEP_DEBUG_INFO=y && {
+  sudo rmmod ${DRV} 2>/dev/null
+  sudo dmesg -C
+  sync
+  sudo insmod ${DRV}.ko
+  sudo dmesg
+  journalctl -f -k
+}
