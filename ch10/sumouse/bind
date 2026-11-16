@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Turn on unofficial Bash 'strict mode'! V useful
+# "Convert many kinds of hidden, intermittent, or subtle bugs into immediate, glaringly obvious errors"
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+source ./common.sh
+
+#--- 'main'
+lsmod |grep ${DRV} >/dev/null 2>&1 || {
+   echo "========= Build and load ${DRV} afresh =========="
+   #make clean ; make
+   make -B
+   sudo rmmod ${DRV} 2>/dev/null || true
+   sudo insmod ${DRV}.ko
+}
+
+# Grok the interface
+INTF=$(find_usbmouse_intf)
+[[ "${INTF}" = "XXX" ]] && die "couldn't find any boot protocol USB mouse"
+echo "---------------------------------------"
+echo "USB mouse Interface is ${INTF}"
+
+BOUND=$(readlink /sys/bus/usb/devices/${INTF}/driver) || true
+[[ -z "${BOUND}" ]] && warn "couldn't read the driver slink"
+echo "${BOUND}"|grep "${ORIG_DRV}$" >/dev/null && echo "As expected, the original ${ORIG_DRV} driver is bound to the mouse"
+
+# Bind our driver to it
+echo ${INTF} |sudo tee /sys/bus/usb/drivers/${ORIG_DRV}/unbind
+echo ${INTF} |sudo tee /sys/bus/usb/drivers/${DRV}/bind
+BOUND=$(readlink /sys/bus/usb/devices/${INTF}/driver)
+echo "${BOUND}"|grep "${DRV}$" >/dev/null && echo "Our ${DRV} driver is now bound to the mouse"
+exit 0

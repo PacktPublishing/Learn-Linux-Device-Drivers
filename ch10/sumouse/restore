@@ -1,0 +1,36 @@
+#!/bin/bash
+# Turn on unofficial Bash 'strict mode'! V useful
+# "Convert many kinds of hidden, intermittent, or subtle bugs into immediate, glaringly obvious errors"
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+source ./common.sh
+
+#--- 'main'
+# Grok the interface
+INTF=$(find_usbmouse_intf)
+[[ "${INTF}" = "XXX" ]] && die "couldn't find boot proto USB mouse"
+echo "USB mouse Interface is ${INTF}"
+
+BOUND=$(readlink /sys/bus/usb/devices/${INTF}/driver) || true
+[[ -z "${BOUND}" ]] && warn "couldn't read the driver"
+echo "${BOUND}"|grep "${ORIG_DRV}$" >/dev/null && {
+  echo "The original ${ORIG_DRV} driver is already bound to the mouse"
+  exit 0
+}
+echo "${BOUND}"|grep "${DRV}$" >/dev/null || warn "Our ${DRV} isn't bound to the mouse, someone else is:
+  ${BOUND}"
+
+# Our driver's bound, unbind it and restore the bind to the orig usbhid driver
+lsmod |grep ${DRV} >/dev/null 2>&1 && {
+   echo ${INTF} |sudo tee /sys/bus/usb/drivers/${DRV}/unbind
+   echo ${INTF} |sudo tee /sys/bus/usb/drivers/${ORIG_DRV}/bind
+   BOUND=$(readlink /sys/bus/usb/devices/${INTF}/driver)
+   echo "${BOUND}"|grep "${ORIG_DRV}$" >/dev/null && echo "The original ${ORIG_DRV} driver is now bound to the USB mouse"
+   sudo rmmod ${DRV}
+} || {
+  echo "Driver ${DRV} not present" ; exit 0
+}
+echo "Original mouse driver ${ORIG_DRV} restored
+NOTE: in a VM, you may need to press Ctrl+Alt to release the pointer grab"
+exit 0
