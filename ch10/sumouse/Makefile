@@ -52,7 +52,6 @@ ifneq ($(KERNELRELEASE),)
 # Part 1: kbuild. Only kbuild variables here; no targets, no CC/KDIR.
 #==================================================================
 obj-m           := $(FNAME_C).o
-#$(FNAME_C)-y    := main.o device.o
 
 ifeq ($(KEEP_DEBUG_INFO),y)
 # https://www.kernel.org/doc/html/latest/kbuild/makefiles.html#compilation-flags

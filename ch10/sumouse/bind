@@ -10,15 +10,14 @@ source ./common.sh
 #--- 'main'
 lsmod |grep ${DRV} >/dev/null 2>&1 || {
    echo "========= Build and load ${DRV} afresh =========="
-   #make clean ; make
-   make -B
+   make -B    # -B: force build
    sudo rmmod ${DRV} 2>/dev/null || true
    sudo insmod ${DRV}.ko
 }
 
 # Grok the interface
 INTF=$(find_usbmouse_intf)
-[[ "${INTF}" = "XXX" ]] && die "couldn't find any boot protocol USB mouse"
+[[ "${INTF}" = "XXX" ]] && die "couldn't find any boot protocol USB mouse (if on a VM, pl follow instructions in the book: Linux Device Drivers in Action, Ch 10, Writing USB drivers)"
 echo "---------------------------------------"
 echo "USB mouse Interface is ${INTF}"
 
