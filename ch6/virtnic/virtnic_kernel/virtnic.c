@@ -142,7 +142,7 @@ static enum hrtimer_restart pseudo_rx_timer_func(struct hrtimer *t)
 	return HRTIMER_RESTART;
 }
 
-/* We ignore the @budget here */
+/* Our NAPI poll routine; we ignore the @budget here */
 static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 {
 	struct virtnic_pvt_data *priv = container_of(napi,
@@ -153,7 +153,7 @@ static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 	if (unlikely(!budget)) /* poss via netpoll */
 		return 0;
 
-	// Simulate receiving one network packet
+	/* Simulate receiving one network packet */
 	skb = netdev_alloc_skb(priv->netdev, pkt_len);
 	if (!skb) {
 		napi_complete_done(napi, 0);
@@ -167,6 +167,12 @@ static int pseudo_napi_poll(struct napi_struct *napi, int budget)
 	 * to the simpler netif_receive_skb() for this demo..
 	 * napi_gro_receive(napi, skb);
 	 */
+	
+	spin_lock(&priv->lock);
+	priv->rxpktnum ++;
+	priv->rx_bytes += skb->len;
+	spin_unlock(&priv->lock);
+
 	netif_receive_skb(skb);
 	napi_complete_done(napi, 1);
 
@@ -201,14 +207,17 @@ static int virtnet_stop(struct net_device *dev)
 	return 0;
 }
 
-// Do an 'ifconfig vnic0' to see the effect of this 'getstats' routine..
+/*
+ * Run this command to see the effect of this 'getstats' routine:
+ * ip -s link show vnic0
+ */
 static struct net_device_stats ndstats;
 static struct net_device_stats *virtnet_get_stats(struct net_device *dev)
 {
 	struct virtnic_pvt_data *priv = netdev_priv(dev);
 
-	/* Take the BH variant as it disables bottom halves too.. this is as a
-	 * Tx softirq (BH) can occur in the Tx method
+	/* Take the BH variant as it disables bottom halves too.. this is as
+	 * the Tx code can run in softirq (BH) context as well.
 	 */
 	spin_lock_bh(&priv->lock);
 	ndstats.rx_packets = priv->rxpktnum;
@@ -253,6 +262,7 @@ static const struct net_device_ops virtnet_netdev_ops = {
 #endif
 };
 
+/* Faux device - the probe's invoked immd on device creation */
 static int virtnet_probe(struct faux_device *fdev)
 {
 	struct net_device *netdev = NULL;
