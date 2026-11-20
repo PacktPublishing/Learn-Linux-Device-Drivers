@@ -2,14 +2,12 @@
 /*
  * sumouse.c - our simple USB HID boot proto mouse driver.
  * It began life as a copy of the original USB HID mouse driver:
- * drivers/hid/usbhid/usbmouse.c (by Vojtech Pavlik). It's been slightly
- * tweaked / enhanced...
+ * drivers/hid/usbhid/usbmouse.c by Vojtech Pavlik. It's been tweaked
+ * and slightly enhanced...
  *
- * Can use our wrapper scripts - bind, restore, sumouse-bind.sh - to try out
+ * Use our wrapper scripts - bind, restore, sumouse-bind.sh - to try out
  * this driver.
  */
-
-//#define pr_fmt(fmt) "%s:%s(): " fmt, KBUILD_MODNAME, __func__
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -17,11 +15,14 @@
 #include <linux/usb/input.h>
 #include <linux/hid.h>
 
+#define DRIVER_DESC	"Simple USB HID boot protocol mouse driver"
+
+/* Mouse boot protocol 'layout' format; byte offsets in the layout 'report' */
 #define SMOUSE_REPORT_MIN	3	/* buttons + X + Y: the boot minimum */
 #define SMOUSE_OFF_BUTTONS	0
 #define SMOUSE_OFF_X		1
 #define SMOUSE_OFF_Y		2
-#define SMOUSE_OFF_WHEEL	3	/* "usually"; see above */
+#define SMOUSE_OFF_WHEEL	3	/* typically @ offset 3 */
 
 /* Our driver private data or context structure; one instance is alloc'ed per
  * interface (that we bind to).
@@ -40,6 +41,13 @@ struct usb_mouse {
 	char phys[64];
 };
 
+/*
+ * The URB completion callback routine; invoked when the mouse has a report.
+ * (How? the controller hw is continually polling it! So when there is a report,
+ * the controller writes it ito databuf[] over DMA, then raises its hw interrupt;
+ * thus it's driver - xhci/ohci/...-hcd - invokes our callback (with the status,
+ * actual_length fields set)!
+ */
 static void usb_mouse_irq(struct urb *urb)
 {
 	struct usb_mouse *mouse = urb->context;
@@ -64,7 +72,17 @@ static void usb_mouse_irq(struct urb *urb)
 	if (urb->actual_length < SMOUSE_REPORT_MIN)
 		goto resubmit;
 		
-
+	/*
+	 * databuf[] has the actual boot layout 'report', for actual_length
+	 * bytes; interpret it as shown:
+	 *          +--------+--------+--------+--------+
+         *	    |  Wheel | Y moved| X moved|btn stat|
+         *	    +--------+--------+--------+--------+
+	 *  byte #       3        2        1        0
+	 *  (our macros reflect this layout)
+	 * Only bytes 0,1,2 are guaranteed with the boot protocol; but realistically,
+	 * if actual_length is 4, the 4th byte is the mouse Scroll Wheel state
+	 */
 	buttons = databuf[SMOUSE_OFF_BUTTONS];
 	dx = (s8)databuf[SMOUSE_OFF_X];
 	dy = (s8)databuf[SMOUSE_OFF_Y];
@@ -72,16 +90,17 @@ static void usb_mouse_irq(struct urb *urb)
 		(s8)databuf[SMOUSE_OFF_WHEEL] : 0;
 
 	/*
-	 * Enable at runtime with dynamic debug, e.g.
+	 * Enable at runtime with dynamic debug (as root), e.g.
 	 *   echo 'module sumouse +p' > /proc/dynamic_debug/control
 	 * %*ph is the kernel's hex-dump printk format (up to 64 bytes).
-	 * Beware: this fires on every report, i.e. up to 1000 times/sec.
+	 * Careful: this printk fires on every report, i.e. up to 1000 times/sec,
+	 * (which is why it's on only when DEBUG's defined or dyn-debug is used).
 	 */
-	dev_dbg(&input->dev, "report[%u] %*ph: L%d R%d M%d dx=%d dy=%d wheel=%d\n",
+	dev_dbg(&input->dev, "report[%u] %*ph: L%d R%d M%d dx=%4d dy=%4d wheel=%2d\n",
 		urb->actual_length,
 		(int)min_t(u32, urb->actual_length, 8), databuf,
-		!!(buttons & BIT(0)), !!(buttons & BIT(1)),
-		!!(buttons & BIT(2)), dx, dy, wheel);
+		!!(buttons & BIT(0)), !!(buttons & BIT(1)), !!(buttons & BIT(2)),
+		dx, dy, wheel);
 
 	input_report_key(input, BTN_LEFT,   buttons & 0x01);
 	input_report_key(input, BTN_RIGHT,  buttons & 0x02);
@@ -99,13 +118,15 @@ resubmit:
 			"can't resubmit intr, %s-%s/input0, status %d\n",
 			mouse->usbdev->bus->bus_name,
 			mouse->usbdev->devpath, status);
+	/* URB re-submitted; the databuf again belongs to the controller,
+	 * don't touch it...
+	 */
 }
 
 static int usb_mouse_open(struct input_dev *input)
 {
 	struct usb_mouse *mouse = input_get_drvdata(input);
 
-	//mouse->urb->dev = mouse->usbdev;
 	dev_dbg(&input->dev, "in %s()\n", __func__);
 
 	return usb_submit_urb(mouse->urb, GFP_KERNEL);
@@ -169,22 +190,16 @@ static int sumouse_probe(struct usb_interface *intf,
 	 * 1. We can't simply assume the device is 'correct'; malicious or buggy
 	 * devices can claim to be a BP mouse when they aren't! So, validate!
 	 * We expect 1 Interrupt IN endpoint.
-	 * Wait: the original usbmouse driver seems to be too strict, checking for
-	 exactly 1 EP and that it (EP 0) is an interrupt-IN. On my native laptop that
-	 didn't work! It showed 2 EPs... so let's relax the check just a tad...
+	 * Wait: the original usbmouse driver seems to be too strict, checking
+	 * for exactly 1 EP and that it (EP 0) is an interrupt-IN. On my native
+	 * x86_64 laptop that didn't work! It showed 2 EPs... so let's relax
+	 * the check just a tad...
 	 */
 	ret = usb_find_int_in_endpoint(interface, &endpoint);
 	if (ret) {
 		dev_err(dev, "no interrupt-IN endpoint\n");
 		return -ENODEV;
 	}
-/*	if (interface->desc.bNumEndpoints != 1)
-		return -ENODEV;
-
-	endpoint = &interface->endpoint[0].desc;
-	if (!usb_endpoint_is_int_in(endpoint))
-		return -ENODEV;
-*/
 
 	pipe = usb_rcvintpipe(usbdev, endpoint->bEndpointAddress);
 	maxp = usb_maxpacket(usbdev, pipe); // typically = 4
@@ -263,15 +278,6 @@ static int sumouse_probe(struct usb_interface *intf,
 	 * The input_set_capability() lets us set both the event type and event
 	 * code at once.
 	 */
-	/*
-	input->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
-	input->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) |
-		BIT_MASK(BTN_RIGHT) | BIT_MASK(BTN_MIDDLE);
-	input->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y);
-	//input->keybit[BIT_WORD(BTN_MOUSE)] |= BIT_MASK(BTN_SIDE) |
-	//	BIT_MASK(BTN_EXTRA);
-	input->relbit[0] |= BIT_MASK(REL_WHEEL);
-	 */
 	input_set_capability(input, EV_KEY, BTN_LEFT);
 	input_set_capability(input, EV_KEY, BTN_RIGHT);
 	input_set_capability(input, EV_KEY, BTN_MIDDLE);
@@ -290,7 +296,10 @@ static int sumouse_probe(struct usb_interface *intf,
 	mouse->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
 
-	/* must set mouse in BP (boot protocol) mode! Else it can behave erratically...*/
+	/*
+	 * IMP: must set mouse in BP (boot protocol) mode! Else it can behave
+	 * erratically...
+	 */
 	ret = sumouse_set_protocol(mouse, HID_BOOT_PROTOCOL);
 	if (ret == -EPIPE) {
 		/* STALL == unsupported error; it violates the spec; happens on
@@ -333,14 +342,16 @@ static void sumouse_disconnect(struct usb_interface *intf)
 /*
  * Which interface(s) can we drive: we specify intf class as HID, subclass as
  * boot, and mouse boot protocol. This matches literally *all* USB HID
- * interfaces, the same as the original usbhid driver! It typically loads
+ * interfaces, the same as the original usbhid driver does! It (usbhid)
+ * typically loads
  * before us and will thus drive our mouse. So, we'll have to first unbind it,
  * then bind our interface thus making this driver the boss! (Our wrapper
- * scripts - bind, restore, sumouse-bind.sh - perform this work.)
+ * scripts - bind, restore - perform this work.)
  */
 static const struct usb_device_id sumouse_id_table[] = {
-	{ USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID, USB_INTERFACE_SUBCLASS_BOOT,
-		USB_INTERFACE_PROTOCOL_MOUSE) },
+	{ USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID,
+				USB_INTERFACE_SUBCLASS_BOOT,
+				USB_INTERFACE_PROTOCOL_MOUSE) },
 	{ }	/* Terminating entry */
 };
 
@@ -355,6 +366,5 @@ static struct usb_driver usb_mouse_driver = {
 
 module_usb_driver(usb_mouse_driver);
 
-#define DRIVER_DESC	"Simple USB HID boot protocol mouse driver"
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_LICENSE("GPL");
