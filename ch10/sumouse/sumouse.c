@@ -106,6 +106,8 @@ static int usb_mouse_open(struct input_dev *input)
 	struct usb_mouse *mouse = input_get_drvdata(input);
 
 	//mouse->urb->dev = mouse->usbdev;
+	dev_dbg(&input->dev, "in %s()\n", __func__);
+
 	return usb_submit_urb(mouse->urb, GFP_KERNEL);
 }
 
@@ -113,6 +115,7 @@ static void usb_mouse_close(struct input_dev *input)
 {
 	struct usb_mouse *mouse = input_get_drvdata(input);
 
+	dev_dbg(&input->dev, "in %s()\n", __func__);
 	usb_kill_urb(mouse->urb);
 }
 
@@ -120,6 +123,7 @@ static void sumouse_free_urb(void *d)
 {
 	struct usb_mouse *m = d;
 
+	dev_dbg(&m->input->dev, "in %s()\n", __func__);
 	usb_kill_urb(m->urb); /* ensure the URB's idle */
 	usb_free_urb(m->urb);
 }
@@ -128,11 +132,13 @@ static void sumouse_free_buf(void *d)
 {
 	struct usb_mouse *m = d;
 
+	dev_dbg(&m->input->dev, "in %s()\n", __func__);
 	usb_free_coherent(m->usbdev, m->buflen, m->databuf, m->databuf_dma);
 }
 
 static int sumouse_set_protocol(struct usb_mouse *m, u16 proto)
 {
+	dev_dbg(&m->input->dev, "in %s()\n", __func__);
 	return usb_control_msg(m->usbdev, usb_sndctrlpipe(m->usbdev, 0),
 			       HID_REQ_SET_PROTOCOL,
 			       USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE,
@@ -156,6 +162,7 @@ static int sumouse_probe(struct usb_interface *intf,
 	int pipe, maxp;
 	int ret;
 
+	dev_dbg(dev, "in %s()\n", __func__);
 	interface = intf->cur_altsetting;
 
 	/*
@@ -315,6 +322,7 @@ static void sumouse_disconnect(struct usb_interface *intf)
 {
 	struct usb_mouse *mouse = usb_get_intfdata (intf);
 
+	dev_dbg(&mouse->input->dev, "in %s()\n", __func__);
 	usb_set_intfdata(intf, NULL);
 	if (mouse) {
 		input_unregister_device(mouse->input);
