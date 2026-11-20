@@ -12,12 +12,12 @@ lsmod |grep ${DRV} >/dev/null 2>&1 || {
    echo "========= Build and load ${DRV} afresh =========="
    make -B    # -B: force build
    sudo rmmod ${DRV} 2>/dev/null || true
-   sudo insmod ${DRV}.ko
+   sudo insmod ${DRV}.ko && echo "${DRV} loaded" || exit 1
 }
 
 # Grok the interface
 INTF=$(find_usbmouse_intf)
-[[ "${INTF}" = "XXX" ]] && die "couldn't find any boot protocol USB mouse (if on a VM, pl follow instructions in the book: Linux Device Drivers in Action, Ch 10, Writing USB drivers)"
+[[ "${INTF}" = "XXX" ]] && die "couldn't find any boot protocol USB mouse (if on a VM, pl follow instructions in the book: Linux Device Drivers in Action, Ch 10, Writing a modern USB driver)"
 echo "---------------------------------------"
 echo "USB mouse Interface is ${INTF}"
 
@@ -29,5 +29,6 @@ echo "${BOUND}"|grep "${ORIG_DRV}$" >/dev/null && echo "As expected, the origina
 echo ${INTF} |sudo tee /sys/bus/usb/drivers/${ORIG_DRV}/unbind
 echo ${INTF} |sudo tee /sys/bus/usb/drivers/${DRV}/bind
 BOUND=$(readlink /sys/bus/usb/devices/${INTF}/driver)
-echo "${BOUND}"|grep "${DRV}$" >/dev/null && echo "Our ${DRV} driver is now bound to the mouse"
+echo "${BOUND}"|grep "${DRV}$" >/dev/null && echo "Our ${DRV} driver is now bound to the mouse
+(Remember to run 'restore' when done)"
 exit 0
