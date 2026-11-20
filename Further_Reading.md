@@ -308,9 +308,18 @@ Miscellaneous:
 
 
 ## Chapter 10, Writing a USB Device Driver
-- [USB Specification Rev 2.0 PDF (includes the famous Chapter 9, USB Device Framework)](https://eater.net/downloads/usb_20.pdf)
-- [USB gadget mode in Raspberry Pi OS: SSH over USB, P Oberosier, Jan 2026](https://www.raspberrypi.com/news/usb-gadget-mode-in-raspberry-pi-os-ssh-over-usb/)
-- [Writing USB Device Drivers - the official kernel doc for a USB 'skeleton' driver](https://docs.kernel.org/driver-api/usb/writing_usb_driver.html)
+- USB: Protocol, architecture, spec, working
+    - [How USB Works: Introduction (Part 1), J Shah, Apr 2024](https://www.circuitbread.com/tutorials/how-usb-works-introduction-part-1)
+    - [How USB Works: Introduction (Part 2), J Shah, Apr 2024](https://www.circuitbread.com/tutorials/how-usb-works-communication-protocol-part-2)
+    - [USB Background](https://www.totalphase.com/support/articles/200349256-usb-background/)
+    - [USB Protocol : Its Architecture, Working, Synchronisation, DataFormat & Its Applications, haya, July 2022](https://www.mathaelectronics.com/digital-car-turning-and-braking-indicator/)
+    - [Technical Deep Dive: What is USB Root Hub Architecture?, PURPLELEC, Feb 2026](https://www.purplelec.com/info-detail/usb-root-hub-architecture-technical-analysis)
+    - [USB Specification Rev 2.0 PDF (includes the famous Chapter 9, USB Device Framework)](https://eater.net/downloads/usb_20.pdf)
+    - [Defined Class Codes (USB CLasses)](https://www.usb.org/defined-class-codes)
+    - [USB gadget mode in Raspberry Pi OS: SSH over USB, P Oberosier, Jan 2026](https://www.raspberrypi.com/news/usb-gadget-mode-in-raspberry-pi-os-ssh-over-usb/)
+
+- USB drivers
+    - [Writing USB Device Drivers - the official kernel doc for a USB 'skeleton' driver](https://docs.kernel.org/driver-api/usb/writing_usb_driver.html)
 
 - []()
 - []()
