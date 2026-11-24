@@ -14,6 +14,7 @@
 #include <linux/slab.h>
 #include <linux/usb/input.h>
 #include <linux/hid.h>
+#include "../../convenient.h"
 
 #define DRIVER_DESC	"Simple USB HID boot protocol mouse driver"
 
@@ -30,7 +31,7 @@
 struct usb_mouse {
 	struct usb_device *usbdev;  /* phy device */
 	struct usb_interface *intf; /* USB intf we're bound to */
-	struct input_dev *input;      /* our facing toward the input core */
+	struct input_dev *input;    /* our facing toward the input core */
 	struct urb *urb;            /* our interrupt-IN URB */
 
 	u8 *databuf;    /* DMA-coherent xfer buffer; CPU view */
@@ -57,10 +58,12 @@ static void usb_mouse_irq(struct urb *urb)
 	s8 dx, dy, wheel;
 	int status;
 
+	PRINT_CTX();
+
 	switch (urb->status) {
-	case 0:			/* success */
+	case 0:			/* success; decode the data */
 		break;
-	case -ECONNRESET:	/* unlink */
+	case -ECONNRESET:	/* URB was ended; simply return */
 	case -ENOENT:
 	case -ESHUTDOWN:
 		return;
@@ -118,8 +121,9 @@ resubmit:
 			"can't resubmit intr, %s-%s/input0, status %d\n",
 			mouse->usbdev->bus->bus_name,
 			mouse->usbdev->devpath, status);
-	/* URB re-submitted; the databuf again belongs to the controller,
-	 * don't touch it...
+	/*
+	 * URB re-submitted, to keep the stream going. The databuf again
+	 * belongs to the controller, don't touch it...
 	 */
 }
 
@@ -292,9 +296,12 @@ static int sumouse_probe(struct usb_interface *intf,
 	usb_fill_int_urb(mouse->urb, usbdev, pipe, mouse->databuf,
 			 mouse->buflen, usb_mouse_irq, mouse,
 			 endpoint->bInterval);
+	/* Set the DMA addr; also set the URB_NO_TRANSFER_DMA_MAP flag; this
+	 * tells the USB Core not to explicitly try mapping the buffer to DMA
+	 * as we've already done this (this helps with performance too).
+	 */
 	mouse->urb->transfer_dma = mouse->databuf_dma;
 	mouse->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
-
 
 	/*
 	 * IMP: must set mouse in BP (boot protocol) mode! Else it can behave
@@ -305,13 +312,14 @@ static int sumouse_probe(struct usb_interface *intf,
 		/* STALL == unsupported error; it violates the spec; happens on
 		 * VirtualBox! Will just Assume report layout is of boot proto
 		 */
-		dev_err(dev, "SET_PROTOCOL(boot) unsupported ('stall'): assuming boot layout\n");
+		dev_err(dev,
+		"SET_PROTOCOL(boot) unsupported ('stall'): assuming boot layout\n");
 	} else if (ret < 0) {
 		dev_err(dev, "SET_PROTOCOL(boot) failed: %d\n", ret);
 		return ret;
 	}
 
-	// Register with a kernel framework, here, input of course
+	/* Register with a kernel framework, here, input of course */
 	ret = input_register_device(input);
 	if (ret) {
 		sumouse_set_protocol(mouse, HID_REPORT_PROTOCOL);
