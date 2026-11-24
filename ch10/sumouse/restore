@@ -33,6 +33,6 @@ lsmod |grep ${DRV} >/dev/null 2>&1 && {
   echo "(If not ok simply disconnect and reconnect the mouse cable/dongle)"
   exit 0
 }
-echo "Original mouse driver ${ORIG_DRV} restored
+echo "Original mouse driver ${ORIG_DRV} restored, ${DRV} unloaded.
 NOTE: in a VM, you may need to press Ctrl+Alt to release the pointer grab"
 exit 0
