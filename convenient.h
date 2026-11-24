@@ -14,8 +14,8 @@
  * A few convenience macros and routines..
  * Mostly for kernel-space usage, some for user-space as well.
  */
-#ifndef __LKD_CONVENIENT_H__
-#define __LKD_CONVENIENT_H__
+#ifndef __LDDIA_CONVENIENT_H__
+#define __LDDIA_CONVENIENT_H__
 
 #include <asm/param.h>		/* HZ */
 #include <linux/sched.h>
@@ -306,4 +306,4 @@ void delay_sec(long val)
 } while (0)
 #endif   /* #ifdef __KERNEL__ */
 
-#endif   /* #ifndef __LKD_CONVENIENT_H__ */
+#endif   /* #ifndef __LDDIA_CONVENIENT_H__ */

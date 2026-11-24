@@ -74,17 +74,18 @@ static void usb_mouse_irq(struct urb *urb)
 
 	if (urb->actual_length < SMOUSE_REPORT_MIN)
 		goto resubmit;
-		
+
 	/*
 	 * databuf[] has the actual boot layout 'report', for actual_length
 	 * bytes; interpret it as shown:
 	 *          +--------+--------+--------+--------+
-         *	    |  Wheel | Y moved| X moved|btn stat|
-         *	    +--------+--------+--------+--------+
+	 *	    |  Wheel | Y moved| X moved|btn stat|
+	 *	    +--------+--------+--------+--------+
 	 *  byte #       3        2        1        0
 	 *  (our macros reflect this layout)
-	 * Only bytes 0,1,2 are guaranteed with the boot protocol; but realistically,
-	 * if actual_length is 4, the 4th byte is the mouse Scroll Wheel state
+	 * Only bytes 0,1,2 are guaranteed with the boot protocol; but
+	 * realistically, if actual_length is 4, the 4th byte is the mouse
+	 * Scroll Wheel state
 	 */
 	buttons = databuf[SMOUSE_OFF_BUTTONS];
 	dx = (s8)databuf[SMOUSE_OFF_X];
@@ -234,7 +235,7 @@ static int sumouse_probe(struct usb_interface *intf,
 	/*
 	 * 3. usb_alloc_coherent() and usb_alloc_urb() don't have devm_ versions;
 	 * so we attach our own devm hooks to clean 'em up! (via the
-	 * devm_add_action_or_reset()) 
+	 * devm_add_action_or_reset())
 	 */
 	mouse->databuf = usb_alloc_coherent(usbdev, mouse->buflen, GFP_KERNEL,
 					&mouse->databuf_dma);
@@ -243,7 +244,7 @@ static int sumouse_probe(struct usb_interface *intf,
 	ret = devm_add_action_or_reset(dev, sumouse_free_buf, mouse);
 	if (ret)
 		return ret;
-	
+
 	mouse->urb = usb_alloc_urb(0, GFP_KERNEL);
 	if (!mouse->urb)
 		return -ENOMEM;
@@ -337,7 +338,7 @@ static int sumouse_probe(struct usb_interface *intf,
 
 static void sumouse_disconnect(struct usb_interface *intf)
 {
-	struct usb_mouse *mouse = usb_get_intfdata (intf);
+	struct usb_mouse *mouse = usb_get_intfdata(intf);
 
 	dev_dbg(&mouse->input->dev, "in %s()\n", __func__);
 	usb_set_intfdata(intf, NULL);
@@ -363,7 +364,7 @@ static const struct usb_device_id sumouse_id_table[] = {
 	{ }	/* Terminating entry */
 };
 
-MODULE_DEVICE_TABLE (usb, sumouse_id_table);
+MODULE_DEVICE_TABLE(usb, sumouse_id_table);
 
 static struct usb_driver usb_mouse_driver = {
 	.name		= "sumouse",
