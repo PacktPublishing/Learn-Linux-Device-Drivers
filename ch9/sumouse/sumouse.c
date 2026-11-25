@@ -3,7 +3,8 @@
  * sumouse.c - our simple USB HID boot proto mouse driver.
  * It began life as a copy of the original USB HID mouse driver:
  * drivers/hid/usbhid/usbmouse.c by Vojtech Pavlik. It's been tweaked
- * and slightly enhanced...
+ * and slightly enhanced... The comments are quite detailed, helping you to
+ * follow what's going on.
  *
  * Use our wrapper scripts - bind, restore, sumouse-bind.sh - to try out
  * this driver.
@@ -25,7 +26,8 @@
 #define SMOUSE_OFF_Y		2
 #define SMOUSE_OFF_WHEEL	3	/* typically @ offset 3 */
 
-/* Our driver private data or context structure; one instance is alloc'ed per
+/*
+ * Our driver private data or context structure; one instance is alloc'ed per
  * interface (that we bind to).
  */
 struct usb_mouse {
@@ -45,9 +47,9 @@ struct usb_mouse {
 /*
  * The URB completion callback routine; invoked when the mouse has a report.
  * (How? the controller hw is continually polling it! So when there is a report,
- * the controller writes it ito databuf[] over DMA, then raises its hw interrupt;
- * thus it's driver - xhci/ohci/...-hcd - invokes our callback (with the status,
- * actual_length fields set)!
+ * the controller writes it ito databuf[] over DMA, then raises its hardware
+ * interrupt; thus it's driver - xhci/ohci/...-hcd - invokes our callback (with
+ * the status, actual_length fields set)!
  */
 static void usb_mouse_irq(struct urb *urb)
 {
@@ -61,7 +63,7 @@ static void usb_mouse_irq(struct urb *urb)
 	PRINT_CTX();
 
 	switch (urb->status) {
-	case 0:			/* success; decode the data */
+	case 0:			/* success; decode / consume the data */
 		break;
 	case -ECONNRESET:	/* URB was ended; simply return */
 	case -ENOENT:
@@ -106,12 +108,12 @@ static void usb_mouse_irq(struct urb *urb)
 		!!(buttons & BIT(0)), !!(buttons & BIT(1)), !!(buttons & BIT(2)),
 		dx, dy, wheel);
 
-	input_report_key(input, BTN_LEFT,   buttons & 0x01);
-	input_report_key(input, BTN_RIGHT,  buttons & 0x02);
+	input_report_key(input, BTN_LEFT, buttons & 0x01);
+	input_report_key(input, BTN_RIGHT, buttons & 0x02);
 	input_report_key(input, BTN_MIDDLE, buttons & 0x04);
 
-	input_report_rel(input, REL_X,     dx);
-	input_report_rel(input, REL_Y,     dy);
+	input_report_rel(input, REL_X, dx);
+	input_report_rel(input, REL_Y, dy);
 	input_report_rel(input, REL_WHEEL, wheel);
 
 	input_sync(input);
@@ -173,8 +175,7 @@ static int sumouse_set_protocol(struct usb_mouse *m, u16 proto)
 
 /*
  * Our probe method: we're here because usbcore - which encapsulates the usb
- bus type 'driver' - found an interface matching our id_table.
-
+ * bus type 'driver' - found an interface matching our id_table.
  */
 static int sumouse_probe(struct usb_interface *intf,
 			const struct usb_device_id *id)
@@ -294,10 +295,12 @@ static int sumouse_probe(struct usb_interface *intf,
 	input->open = usb_mouse_open;
 	input->close = usb_mouse_close;
 
+	/* 6. Setup the URB for interrupt transfers */
 	usb_fill_int_urb(mouse->urb, usbdev, pipe, mouse->databuf,
 			 mouse->buflen, usb_mouse_irq, mouse,
 			 endpoint->bInterval);
-	/* Set the DMA addr; also set the URB_NO_TRANSFER_DMA_MAP flag; this
+	/*
+	 * Set the DMA addr; also set the URB_NO_TRANSFER_DMA_MAP flag; this
 	 * tells the USB Core not to explicitly try mapping the buffer to DMA
 	 * as we've already done this (this helps with performance too).
 	 */
@@ -305,8 +308,8 @@ static int sumouse_probe(struct usb_interface *intf,
 	mouse->urb->transfer_flags |= URB_NO_TRANSFER_DMA_MAP;
 
 	/*
-	 * IMP: must set mouse in BP (boot protocol) mode! Else it can behave
-	 * erratically...
+	 * 7. IMP: must set mouse in BP (boot protocol) mode! Else it can
+	 * behave erratically...
 	 */
 	ret = sumouse_set_protocol(mouse, HID_BOOT_PROTOCOL);
 	if (ret == -EPIPE) {
@@ -320,7 +323,7 @@ static int sumouse_probe(struct usb_interface *intf,
 		return ret;
 	}
 
-	/* Register with a kernel framework, here, input of course */
+	/* 8. Register with a kernel framework, here, input of course */
 	ret = input_register_device(input);
 	if (ret) {
 		sumouse_set_protocol(mouse, HID_REPORT_PROTOCOL);
@@ -344,7 +347,8 @@ static void sumouse_disconnect(struct usb_interface *intf)
 	usb_set_intfdata(intf, NULL);
 	if (mouse) {
 		input_unregister_device(mouse->input);
-		sumouse_set_protocol(mouse, HID_REPORT_PROTOCOL); /* best effort */
+		/* set mouse back to full report protocol; best effort */
+		sumouse_set_protocol(mouse, HID_REPORT_PROTOCOL);
 	}
 }
 
@@ -352,10 +356,9 @@ static void sumouse_disconnect(struct usb_interface *intf)
  * Which interface(s) can we drive: we specify intf class as HID, subclass as
  * boot, and mouse boot protocol. This matches literally *all* USB HID
  * interfaces, the same as the original usbhid driver does! It (usbhid)
- * typically loads
- * before us and will thus drive our mouse. So, we'll have to first unbind it,
- * then bind our interface thus making this driver the boss! (Our wrapper
- * scripts - bind, restore - perform this work.)
+ * typically loads before us and will thus drive our mouse. So, we'll have to
+ * first unbind it, then bind our interface thus making this driver the boss!
+ * (Our wrapper scripts - bind, restore - perform this work.)
  */
 static const struct usb_device_id sumouse_id_table[] = {
 	{ USB_INTERFACE_INFO(USB_INTERFACE_CLASS_HID,
