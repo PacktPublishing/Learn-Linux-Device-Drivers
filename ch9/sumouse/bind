@@ -10,8 +10,8 @@ source ./common.sh
 #--- 'main'
 lsmod |grep ${DRV} >/dev/null 2>&1 || {
    echo "========= Build and load ${DRV} afresh =========="
-   make -B    # -B: force build
-   # Or: use the KEEP_DEBUG_INFO=y prefix to enable debug printk's
+   make
+   # Or: debug ver, enable debug printk's
    #KEEP_DEBUG_INFO=y make -B    # -B: force build
    sudo rmmod ${DRV} 2>/dev/null || true
    sudo insmod ${DRV}.ko && echo "${DRV} loaded" || exit 1
