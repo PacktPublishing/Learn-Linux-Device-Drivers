@@ -30,7 +30,7 @@ Bonus (though older) links:
  - [Chapter 1, Kernel workspace setup](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#chapter-1-kernel-development-workspace-setup---further-reading)
 
 
-## Chapter 2, The modern LDM and Writing platform drivers - Further Reading
+## Chapter 1, The modern LDM and Writing platform drivers - Further Reading
 
 - LDM
     - [Linux Device Model (LDM)](https://linux-kernel-dev.blogspot.com/2017/02/linux-device-model-ldm.html)
@@ -41,7 +41,7 @@ Bonus (though older) links:
     - [A tour of the mfd, regmap and syscon APIs, Bootlin](https://bootlin.com/pub/conferences/2015/elce/belloni-mfd-regmap-syscon/belloni-mfd-regmap-syscon.pdf)
 
 
-## Chapter 3, The Device Tree - Further Reading
+## Chapter 2, The Device Tree - Further Reading
 
 - Device Tree
     - [Linux and the Devicetree, Grant Likely, official kernel doc](https://docs.kernel.org/devicetree/usage-model.html)
@@ -80,7 +80,7 @@ Bonus (though older) links:
 
 
 
-## Chapter 5, Writing a PCIe skeleton driver - Further Reading
+## Chapter 4, Writing a PCIe skeleton driver - Further Reading
 
 - [PCI SIG - Special Interest Group](https://pcisig.com/specifications) - PCI standards documents, etc
 - Official kernel doc: [How To Write Linux PCI Drivers](https://docs.kernel.org/PCI/pci.html)
@@ -91,7 +91,7 @@ Bonus (though older) links:
 [\[Top\]](https://github.com/PacktPublishing/Linux-Kernel-Programming_2E/blob/main/Further_Reading.md#further-reading)
 
 
-## Chapter 6, Writing a NIC driver - Further Reading
+## Chapter 5, Writing a NIC driver - Further Reading
 
 - Required reading: [Internet protocol suite, Wikipedia article](https://en.wikipedia.org/wiki/Internet_protocol_suite#Comparison_of_TCP/IP_and_OSI_layering)
 
@@ -146,7 +146,7 @@ Bonus (though older) links:
     - [What are the Network Visualization Tools you guys use for the audit purpose?, Reddit](https://www.reddit.com/r/sysadmin/comments/1bpmisl/what_are_the_network_visualization_tools_you_guys/)
 
 
-## Chapter 7, Writing an Input device driver - Further Reading
+## Chapter 6, Writing an Input device driver - Further Reading
 
 - [Wayland (protocol)](https://en.wikipedia.org/wiki/Wayland_(protocol))
 - [What is libinput?](https://wayland.freedesktop.org/libinput/doc/latest/what-is-libinput.html)
@@ -161,7 +161,7 @@ Bonus (though older) links:
 
 
 
-## Chapter 8, Writing a modern Block Driver, Part 1 – the Linux Storage Stack - Further Reading
+## Chapter 7, Writing a modern Block Driver, Part 1 – the Linux Storage Stack - Further Reading
 - [Cylinder-head-sector, Wikipedia](https://en.wikipedia.org/wiki/Cylinder-head-sector)
 - [Logical block addressing, Wikipedia](https://en.wikipedia.org/wiki/Logical_block_addressing)
 - [Managed Flash Background Operations Series; Part 5: Understanding Logical Block Address to Physical Block Address Translation in NAND Flash Memory](https://americas.kioxia.com/content/dam/kioxia/en-us/business/memory/mlc-nand/asset/KIOXIA_Managed_Flash_BOS_P5_Understanding_L2P_Block_Address_Translation_Tech_Brief.pdf)
@@ -184,7 +184,7 @@ Bonus (though older) links:
     - [Configuring and managing Device Mapper Multipath, RedHat RHEL7](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html-single/dm_multipath/index)
 
 
-## Chapter 9, Writing a modern Block Driver, Part 2 – the implementation - Further Reading
+## Chapter 8, Writing a modern Block Driver, Part 2 – the implementation - Further Reading
 - [Block Device Drivers; excellent](https://linux-kernel-labs.github.io/refs/heads/master/labs/block_device_drivers.html#block-device-drivers)
 - [Block - official kernel docs](https://www.kernel.org/doc/html/v6.18/block/index.html)
     - [Multi-Queue Block IO Queueing Mechanism (blk-mq) for 6.18](https://www.kernel.org/doc/html/v6.18/block/blk-mq.html)
@@ -204,7 +204,7 @@ Bonus (though older) links:
 ' - official kernel doc](https://www.kernel.org/doc/html/latest/block/ublk.html)
 
 
-## Chapter 10, Writing a USB Device Driver
+## Chapter 9, Writing a USB Device Driver
 - USB: Protocol, architecture, spec, working
     - [How USB Works: Introduction (Part 1), J Shah, Apr 2024](https://www.circuitbread.com/tutorials/how-usb-works-introduction-part-1)
     - [How USB Works: Introduction (Part 2), J Shah, Apr 2024](https://www.circuitbread.com/tutorials/how-usb-works-communication-protocol-part-2)
