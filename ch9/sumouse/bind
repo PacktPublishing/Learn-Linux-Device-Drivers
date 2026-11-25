@@ -6,16 +6,19 @@
 set -euo pipefail
 
 source ./common.sh
+DEBUG=0 # set to 1 to see all debug printk's (voluminous)
 
-#--- 'main'
-lsmod |grep ${DRV} >/dev/null 2>&1 || {
-   echo "========= Build and load ${DRV} afresh =========="
-   make
-   # Or: debug ver, enable debug printk's
-   #KEEP_DEBUG_INFO=y make -B    # -B: force build
-   sudo rmmod ${DRV} 2>/dev/null || true
-   sudo insmod ${DRV}.ko && echo "${DRV} loaded" || exit 1
-}
+if [[ ! -f ${DRV}.ko ]] ; then
+   echo "========= Build ${DRV} afresh =========="
+   [[ ${DEBUG} -eq 0 ]] && make || {
+      # debug ver, enable debug printk's
+      KEEP_DEBUG_INFO=y make
+   }
+fi
+
+echo "========= Load ${DRV} afresh =========="
+sudo rmmod ${DRV} 2>/dev/null || true
+sudo insmod ${DRV}.ko && echo "${DRV} loaded" || exit 1
 
 # Grok the interface
 INTF=$(find_usbmouse_intf)
