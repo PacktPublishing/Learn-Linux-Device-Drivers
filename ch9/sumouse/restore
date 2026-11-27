@@ -34,5 +34,5 @@ lsmod |grep ${DRV} >/dev/null 2>&1 && {
   exit 0
 }
 echo "Original mouse driver ${ORIG_DRV} restored, ${DRV} unloaded.
-NOTE: in a VM, you may need to press Ctrl+Alt to release the pointer grab"
+NOTE: in a VM, you may need to press Ctrl_L+Alt_L to release the pointer grab"
 exit 0
