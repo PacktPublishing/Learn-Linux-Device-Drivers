@@ -33,8 +33,8 @@ set -e
 
 # verify kernel config
 echo "This kernel ver: $(uname -r)"
-grep -E -w "CONFIG_USB_SUPPORT=y|CONFIG_USB_GADGET=[ym]|CONFIG_USB_CONFIGFS=[ym]|CONFIG_USB_DUMMY_HCD=[ym]" /boot/config-$(uname -r)
-grep -E -w "CONFIG_USB_SUPPORT=y|CONFIG_USB_GADGET=[ym]|CONFIG_USB_CONFIGFS=[ym]|CONFIG_USB_DUMMY_HCD=[ym]" /boot/config-$(uname -r) |grep "not set" >/dev/null 2>&1 && die "Requires USB_SUPPORT=y USB_GADGET=y|m, USB_CONFIGFS=y|m, CONFIG_USB_DUMMY_HCD=y|m"
+grep -E -w "CONFIG_USB_SUPPORT=y|CONFIG_USB_GADGET=[ym]|CONFIG_USB_CONFIGFS=[ym]|CONFIG_USB_DUMMY_HCD=[ym]|CONFIG_USB_ACM=[ym]" /boot/config-$(uname -r)
+grep -E -w "CONFIG_USB_SUPPORT=y|CONFIG_USB_GADGET=[ym]|CONFIG_USB_CONFIGFS=[ym]|CONFIG_USB_DUMMY_HCD=[ym]|CONFIG_USB_ACM=[ym]" /boot/config-$(uname -r) |grep "not set" >/dev/null 2>&1 && die "Requires USB_SUPPORT=y USB_GADGET=y|m, USB_CONFIGFS=y|m, CONFIG_USB_DUMMY_HCD=y|m"
 echo
 
 # other checks
